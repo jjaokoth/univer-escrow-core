@@ -1,0 +1,17 @@
+services:
+  univer-escrow-gateway:
+    image: securerise:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      NODE_ENV: development
+      # Structured flags without leaking secrets
+      UE_ALLOWED_HOSTS: "localhost"
+      UE_MASTER_SETTLEMENT_ACCOUNT: "880200283180"
+    volumes:
+      - ./:/app:delegated
+    command: ["node", "-e", "console.log('Dev compose placeholder for univer-escrow-gateway')"]
+

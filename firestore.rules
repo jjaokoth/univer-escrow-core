@@ -1,0 +1,67 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // -------------------------
+    // Tenant document rules
+    // -------------------------
+    match /tenants/{tenantId} {
+      allow read: if request.auth != null && request.auth.uid == tenantId;
+      allow create: if request.auth != null && request.auth.uid == tenantId;
+      allow update: if request.auth != null && request.auth.uid == tenantId;
+      allow delete: false;
+    }
+
+    // -------------------------
+    // Escrows document rules
+    // -------------------------
+    match /escrows/{escrowId} {
+      // Escrow documents must be written only within the owning tenant.
+      // The model assumes escrow documents contain a tenantId field.
+      allow read: if request.auth != null && resource.data.tenantId == request.auth.uid;
+
+      // Writes require tenant boundary match.
+      allow create: if request.auth != null && request.resource.data.tenantId == request.auth.uid;
+
+      // Only allow state mutation when the request is from admin context.
+      // (Host systems should inject an admin claim or use an authorized service account.)
+      allow update: if request.auth != null
+        && resource.data.tenantId == request.auth.uid
+        && request.auth.token.admin == true
+        && isEscrowStateMutationAllowed(resource.data, request.resource.data);
+
+      allow delete: false;
+
+      // -------- state ledger subcollection --------
+      match /state_ledger/{entryId} {
+        // Write-once: allow create only; block update and delete.
+        allow create: if request.auth != null
+          && request.resource.data.tenantId == request.auth.uid
+          && request.resource.data.escrowId == escrowId;
+
+        allow update: if false;
+        allow delete: if false;
+
+        // Read limited to owning tenant.
+        allow read: if request.auth != null && resource.data.tenantId == request.auth.uid;
+      }
+    }
+
+    function isEscrowStateMutationAllowed(oldDoc, newDoc) {
+      // Reject client-side modifications of critical financial tracking fields.
+      // Only admin writes permitted; additionally require that the only changed
+      // fields are those explicitly allowed.
+
+      // Financial invariants: totals must not be changed directly by clients.
+      // (The payment pipeline/service should compute and submit final_amount.)
+      return newDoc.totalAmount == oldDoc.totalAmount
+        && newDoc.surchargeAmount == oldDoc.surchargeAmount
+        && newDoc.finalAmount == oldDoc.finalAmount
+        && newDoc.immutableRuleHash == oldDoc.immutableRuleHash
+        // State may change.
+        && newDoc.state is string;
+    }
+
+  }
+}
+

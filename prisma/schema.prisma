@@ -1,0 +1,135 @@
+// Universal Trust Layer - Immutable Ledger (Prisma)
+// Notes:
+// - Ledger is modeled as append-only: immutable event rows.
+// - "No-delete" intent: enforce immutability at DB level via triggers/migrations.
+// - Prisma cannot create triggers directly; see SQL snippet in README/notes.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Common enums
+enum DestinationType {
+  M_PESA
+  BANK_ACCOUNT
+  CRYPTO_WALLET
+}
+
+enum LedgerEventType {
+  ESCROW_LOCKED
+  PAYOUT_INITIATED
+  PAYOUT_DISPATCHED
+  PAYOUT_SUCCEEDED
+  PAYOUT_FAILED
+  DELIVERY_VERIFICATION_ACCEPTED
+  DELIVERY_VERIFICATION_REJECTED
+}
+
+enum LedgerCurrency {
+  KES
+  USD
+  USDC
+}
+
+/// Append-only ledger of state transitions.
+/// Each row is a single event; the "current state" is derived from the event stream.
+model LedgerEvent {
+  id                String              @id @default(cuid())
+
+  /// Business identifiers for idempotency & traceability
+  ledger_event_key String             @unique // e.g. `${escrowId}:${eventType}:${idempotencyKey}`
+  escrow_id         String
+  payout_id         String?            // null until a payout is created
+
+  event_type        LedgerEventType
+
+  /// Amounts
+  currency          LedgerCurrency
+  amount_minor      BigInt
+
+  /// Decimal-free storage: minor units (e.g. kobo, cents, token base units)
+
+  /// JSON payload holding provider-specific details, signatures, hashes, etc.
+  /// MUST NOT contain secrets in plaintext.
+  payload           Json?
+
+  /// Hash chain for immutability (optional but recommended)
+  previous_hash     String?
+  event_hash        String
+
+  /// Multi-tenant / actor trace
+  tenant_id         String?
+  actor_id          String?
+  actor_type        String?            // e.g. "user", "ai_vision_agent", "system"
+
+  /// Auditing
+  created_at        DateTime           @default(now())
+
+  @@index([escrow_id, created_at])
+  @@index([payout_id])
+  @@index([event_type, created_at])
+}
+
+/// Escrow locks funds until a delivery verification decision is accepted.
+/// The escrow state is also derived from LedgerEvent stream; this table stores fast lookup.
+model Escrow {
+  id                String   @id @default(cuid())
+  tenant_id         String?
+  user_id           String?
+
+  destination_type  DestinationType
+  currency          LedgerCurrency
+  amount_minor      BigInt
+
+  /// Where funds should go after verification
+  destination_ref   String  // e.g. mpesa shortcode+phone reference, bank account id, wallet address
+
+  /// Delivery verification gate
+  delivery_required Boolean @default(true)
+
+  /// Idempotency key for lock request (prevents double-escrow locks)
+  lock_request_key  String  @unique
+
+  /// Denormalized current state
+  status             String   @default("PENDING_LOCK")
+
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  payout             Payout?
+
+  @@index([tenant_id, user_id])
+}
+
+/// Payout attempts associated with an Escrow.
+/// Multiple attempts can exist, but each Dispatch/Succeeded/Failed must be unique by ledger_event_key.
+model Payout {
+  id                String   @id @default(cuid())
+  escrow_id         String   @unique
+
+  destination_type  DestinationType
+  currency          LedgerCurrency
+  amount_minor      BigInt
+
+  destination_ref   String
+
+  /// Router/engine idempotency
+  payout_request_key String @unique // e.g. `${escrowId}:${destination_type}:${idempotencyKey}`
+
+  status            String   @default("CREATED")
+
+  /// Provider references (tokenized)
+  provider_name     String?
+  provider_ref      String?
+
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  ledger_events     LedgerEvent[]
+}
+

@@ -1,0 +1,198 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Univer-Escrow — Production Database Models (Declarative Schema)",
+  "description": "Enterprise declarative model description for tenant isolation, escrow lifecycle state tracking, and immutable state audit ledgering.",
+  "type": "object",
+  "additionalProperties": false,
+  "definitions": {
+    "timestamp": {
+      "description": "ISO-8601 timestamp string (or Firestore Timestamp in host implementation).",
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T"
+    },
+    "enumState": {
+      "type": "string",
+      "enum": ["PENDING", "LOCKED", "DISPUTED", "RELEASED", "REFUNDED"]
+    },
+    "tenantId": {
+      "type": "string",
+      "minLength": 3,
+      "description": "White-label tenant identifier (tenantId)."
+    },
+    "clientId": {
+      "type": "string",
+      "description": "API key client identifier for a tenant integration."
+    },
+    "systemId": {
+      "type": "string",
+      "description": "Internal system identifier for the escrow engine."
+    },
+    "hashHex": {
+      "type": "string",
+      "pattern": "^[a-fA-F0-9]{64}$",
+      "description": "SHA-256 hash in hex representation."
+    }
+  },
+  "collection_models": {
+    "/tenants/{tenantId}": {
+      "path_params": {
+        "tenantId": { "$ref": "#/definitions/tenantId" }
+      },
+      "document_fields": {
+        "tenantId": { "$ref": "#/definitions/tenantId" },
+        "displayName": { "type": "string", "minLength": 1 },
+        "platformFlags": {
+          "type": "object",
+          "description": "Feature toggles and white-label configuration flags.",
+          "additionalProperties": false,
+          "properties": {
+            "enableSurchargeMode": { "type": "boolean", "default": false },
+            "allowMultiplePaymentProviders": { "type": "boolean", "default": true },
+            "integrityEnforcement": { "type": "boolean", "default": true }
+          },
+          "required": ["enableSurchargeMode", "allowMultiplePaymentProviders", "integrityEnforcement"]
+        },
+        "operationalState": {
+          "type": "string",
+          "enum": ["ACTIVE", "SUSPENDED", "DECOMMISSIONED"],
+          "default": "ACTIVE"
+        },
+        "registeredAt": { "$ref": "#/definitions/timestamp" },
+        "updatedAt": { "$ref": "#/definitions/timestamp" },
+        "createdBy": { "type": "string", "description": "Admin actor or system principal." },
+        "publicTelemetryEnabled": { "type": "boolean", "default": false }
+      },
+      "required_fields": [
+        "tenantId",
+        "displayName",
+        "platformFlags",
+        "operationalState",
+        "registeredAt",
+        "updatedAt",
+        "createdBy",
+        "publicTelemetryEnabled"
+      ]
+    },
+
+    "/escrows/{escrowId}": {
+      "path_params": {
+        "escrowId": { "type": "string", "minLength": 5 },
+        "tenantId": { "$ref": "#/definitions/tenantId" }
+      },
+      "document_fields": {
+        "tenantId": { "$ref": "#/definitions/tenantId" },
+
+        "escrowId": { "type": "string", "minLength": 5 },
+        "systemId": { "$ref": "#/definitions/systemId" },
+
+        "buyerRef": { "type": "string", "description": "Buyer/customer reference (non-secret)." },
+        "sellerRef": { "type": "string", "description": "Seller/merchant reference (non-secret)." },
+
+        "providerRef": { "type": "string", "description": "Selected payment provider reference." },
+        "correlationRef": { "type": "string", "description": "Provider webhook correlation key." },
+
+        "currency": { "type": "string", "minLength": 3, "maxLength": 3, "description": "ISO-4217 code." },
+
+        "totalAmount": { "type": "number", "minimum": 0 },
+        "surchargeAmount": { "type": "number", "minimum": 0, "default": 0 },
+        "finalAmount": { "type": "number", "minimum": 0 },
+
+        "state": { "$ref": "#/definitions/enumState" },
+
+        "tracking": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Operational tracking pointers (non-secret).",
+          "properties": {
+            "createdAt": { "$ref": "#/definitions/timestamp" },
+            "lockedAt": { "$ref": "#/definitions/timestamp", "nullable": true },
+            "disputedAt": { "$ref": "#/definitions/timestamp", "nullable": true },
+            "releasedAt": { "$ref": "#/definitions/timestamp", "nullable": true },
+            "refundedAt": { "$ref": "#/definitions/timestamp", "nullable": true },
+            "lastUpdateAt": { "$ref": "#/definitions/timestamp" }
+          },
+          "required": ["createdAt", "lockedAt", "disputedAt", "releasedAt", "refundedAt", "lastUpdateAt"]
+        },
+
+        "immutableRuleHash": {
+          "type": "string",
+          "description": "Hash binding current state transition ruleset context (SHA-256 hex).",
+          "pattern": "^[a-fA-F0-9]{64}$"
+        },
+
+        "integrityVerified": { "type": "boolean", "default": false },
+        "lastIntegrityAt": { "$ref": "#/definitions/timestamp" },
+
+        "createdAt": { "$ref": "#/definitions/timestamp" },
+        "updatedAt": { "$ref": "#/definitions/timestamp" }
+      },
+      "required_fields": [
+        "tenantId",
+        "escrowId",
+        "systemId",
+        "buyerRef",
+        "sellerRef",
+        "providerRef",
+        "correlationRef",
+        "currency",
+        "totalAmount",
+        "surchargeAmount",
+        "finalAmount",
+        "state",
+        "tracking",
+        "immutableRuleHash",
+        "integrityVerified",
+        "lastIntegrityAt",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+
+    "/escrows/{escrowId}/state_ledger": {
+      "path_params": {
+        "escrowId": { "type": "string", "minLength": 5 },
+        "tenantId": { "$ref": "#/definitions/tenantId" }
+      },
+      "subcollection_immutable": true,
+      "document_fields": {
+        "tenantId": { "$ref": "#/definitions/tenantId" },
+        "escrowId": { "type": "string", "minLength": 5 },
+
+        "ledgerEntryId": { "type": "string", "minLength": 5 },
+        "fromState": { "$ref": "#/definitions/enumState" },
+        "toState": { "$ref": "#/definitions/enumState" },
+
+        "transitionAt": { "$ref": "#/definitions/timestamp" },
+        "actor": { "type": "string", "description": "Admin actor/system principal identifier." },
+
+        "requestContextHash": { "$ref": "#/definitions/hashHex" },
+        "mutationIntegrityHash": { "$ref": "#/definitions/hashHex" },
+
+        "signedValidationHash": { "type": "string", "description": "Signed hash payload represented as hex/base64 string (host-defined encoding)." },
+
+        "auditPayload": {
+          "type": "object",
+          "description": "Opaque, publication-safe payload snapshot for audit reconstruction.",
+          "additionalProperties": true
+        },
+
+        "createdAt": { "$ref": "#/definitions/timestamp" }
+      },
+      "required_fields": [
+        "tenantId",
+        "escrowId",
+        "ledgerEntryId",
+        "fromState",
+        "toState",
+        "transitionAt",
+        "actor",
+        "requestContextHash",
+        "mutationIntegrityHash",
+        "signedValidationHash",
+        "auditPayload",
+        "createdAt"
+      ]
+    }
+  }
+}
+

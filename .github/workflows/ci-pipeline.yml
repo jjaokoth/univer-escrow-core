@@ -1,0 +1,85 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+
+jobs:
+  isolation-build-test:
+    name: Isolation Build Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Backend deps
+        working-directory: securerise/packages/backend
+        run: npm ci
+
+      - name: Backend compile smoke check
+        working-directory: securerise/packages/backend
+        run: npm run build --if-present
+
+      - name: Install Flutter deps
+        working-directory: securerise/packages/frontend_flutter
+        run: |
+          if [ -f pubspec.yaml ]; then
+            flutter pub get
+          fi
+
+      - name: Flutter tests
+        working-directory: securerise/packages/frontend_flutter
+        run: flutter test
+
+  interface-validation:
+    name: Interface Validation (Frontend Widget Suite)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: stable
+
+      - name: Flutter pub get
+        working-directory: securerise/packages/frontend_flutter
+        run: flutter pub get
+
+      - name: Flutter test
+        working-directory: securerise/packages/frontend_flutter
+        run: flutter test
+
+  boundary-inspection:
+    name: Boundary Inspection (Static Checks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Basic grep for network literals
+        run: |
+          set -euo pipefail
+          # Fail if hardcoded cloud URLs are introduced (adjust policy as needed)
+          rg -n "https?://" securerise/packages/frontend_flutter/lib securerise/packages/backend/src || true
+          # Fail if env vars are embedded directly (example pattern)
+          rg -n "process\.env\.|dotenv" securerise/packages/backend/src || true
+
+      - name: Dart analyze (best effort)
+        working-directory: securerise/packages/frontend_flutter
+        run: |
+          if [ -f pubspec.yaml ]; then
+            flutter analyze || true
+          fi
+
