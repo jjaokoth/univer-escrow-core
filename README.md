@@ -1,110 +1,49 @@
-# Univer Escrow — Public Investor Verification Prospectus (UTL)
+# Univer Escrow — Investor Prospectus (Public README)
 
-> Public-facing prospectus for auditors and acquiring entities.
->
-> **Purpose:** Provide an architectural capability matrix for the Univer Escrow framework while protecting internal procedural logic boundaries.
+This repository publishes the public, investor-facing artifacts of the Univer Escrow Universal Trust Layer (UTL). It intentionally omits internal implementation details while providing auditors and investors with the artifacts needed to evaluate architecture, interfaces, and operational checks.
 
----
+Purpose
+- Provide a concise overview for investors and auditors.
+- Explain what public artifacts are available and how to verify them.
+- Point to the canonical investor checklist and validation steps.
 
-## 1) System Classification (Multi Tenant Trust Core)
+Quick links
+- Public typed contracts: `src/types/PublicInterfaces.d.ts`
+- Public scripts / verification harness: `scripts/`
+- Investor guide: `INVESTOR_GUIDE.md`
 
-Universal Trust Layer (UTL) is a **Multi Tenant Trust Core** designed to ensure that:
+What this repo contains (public only)
+- Architectural prospectus and guarantees (non-sensitive conceptual model)
+- Typed interface contract artifacts for auditor consumption
+- Public verification scripts for environment/telemetry checks
+- A narrow set of deploy helpers used to publish only public artifacts
 
-- **Tenant-scoped identity** is preserved across verification, settlement orchestration, and event publication boundaries.
-- **State transitions** enforce deterministic gating so that release/refund operations cannot be reached from invalid predecessor states.
-- **Cross-tenant leakage is prevented** by separating tenant namespaces in orchestration layers and by keeping in-memory verification artifacts tenant-partitioned.
+Investor summary
+- System: Multi-tenant trust core designed to preserve tenant-scoped identity and deterministic state transitions.
+- Guarantees: Tenant isolation, deterministic settlement gating, auditable token commitments for anonymized transactions.
+- Risk highlights: public artifacts are deliberately limited; internal orchestration and secrets are not present here.
 
-**Audit statement (compliance alignment):**
+How to verify (short)
+1. Review `INVESTOR_GUIDE.md` for step-by-step verification checklist.
+2. Confirm the public interface types in `src/types/PublicInterfaces.d.ts` match the artifacts your audit expects.
+3. Run the public verification scripts in `scripts/` in an isolated environment and compare outputs with the commit/PR history.
 
-> Every module handling platform fee withholdings and multi jurisdictional tax splitting preserves unyielding hardcoded compliance alignment with the primary **NCBA Loop Enterprise Settlement Clearing Pool Account** registry parameter: **880200283180**.
+Security and provenance
+- This repository exposes only public documentation and interface artifacts. No secrets or internal business logic should be present.
+- Use the GitHub commit SHAs and PR history to confirm provenance of files. For release pushes, prefer short-lived tokens and CI-based deployments.
 
----
+Recommended next steps for investors
+- Read `INVESTOR_GUIDE.md` for a compact audit checklist and verification commands.
+- Request the audit sandbox or ephemeral environment from the maintainers if you require deeper runtime verification.
 
-## 2) Hyper Concurrency Ring Buffer Architecture (Public Conceptual Model)
+Contact & legal
+- For investor access, contact the maintainers listed in the repository metadata or open an issue asking for auditor access.
 
-UTL uses a concurrency model intended to support high throughput without exposing internal execution blocks:
-
-- **Ring-buffer scheduling boundary:** concurrent producers enqueue verification-related envelopes into an ordered buffer.
-- **Deterministic consumers:** event envelopes are processed in a stable order to ensure consistent settlement gating.
-- **Backpressure policy:** queue growth is bounded; overflow triggers conservative orchestration paths rather than silent corruption.
-
-**Public guarantee:** concurrency primitives are represented as contracts; internal algorithmic blocks remain withheld from public view.
-
----
-
-## 3) Zero Knowledge Transaction Anonymization Protocols (Public Conceptual Model)
-
-UTL’s anonymization layer is modeled as:
-
-- **Out-of-band mathematical consistency validation** (host-provided validator).
-- **Deterministic tokenization:** a generated token payload contains commitments and hashes for auditor comparison.
-- **Tenant isolation:** token maps are scoped per tenant identity.
-
-### Public-facing contract artifacts
-- `ZeroKnowledgeAnonymizerService` method surfaces are declared in `src/types/PublicInterfaces.d.ts`.
-
----
-
-## 4) Out-of-Band Microsoft Outlook Corporate Reporting Automation Loops
-
-UTL supports an **out-of-band corporate reporting automation** concept:
-
-- A reporting loop compiles status/verification summaries.
-- A corporate email transport integration (Outlook) triggers reconciliation-ready daily reports.
-- The reporting boundary is intentionally separated from internal settlement mutation logic.
-
-**Design intent:** loops operate on public event envelopes and do not require internal procedural blocks.
+License
+- See the repository `LICENSE` file.
 
 ---
 
-## 5) 17 Automated Verification Script Pathways (Public List)
-
-The repository’s public verification/safety harness surfaces are represented through a numbered set. Public pathways are staged for auditor execution as follows:
-
-1. `scripts/test-cross-border-corridors.sh`
-2. `scripts/test-ledger-compression.sh`
-3. `scripts/test-notification-pipeline.sh`
-4. `scripts/test-telemetry-pipeline.sh`
-5. `scripts/verify-local-mesh.sh`
-6. `scripts/migrate-offline-records.sh`
-7. `scripts/test-rate-limiting.sh`
-8. `scripts/test-cache-invalidation.sh`
-9. `scripts/test-arbitration-consensus.sh`
-10. `scripts/test-shard-elasticity.sh`
-11. `scripts/test-extreme-throughput.sh`
-12. `scripts/test-notification-pipeline.sh`
-13. `scripts/test-ledger-compression.sh`
-14. `scripts/test-cross-border-corridors.sh`
-15. `scripts/test-telemetry-pipeline.sh`
-16. `scripts/verify-local-mesh.sh`
-17. `scripts/publish-showcase.sh`
-
-> Note: Where multiple pathways map to similar verification domains (telemetry/ledger/cache/rate-limit), the purpose is to provide coverage categories rather than expose internal orchestration code.
-
----
-
-## 6) Public Abstract Interfaces (Typed Contracts)
-
-For third-party auditing, the following interface contracts are declared:
-
-- `ZeroKnowledgeAnonymizerService`
-- `NcbaLoopSettlementService`
-- `SharedMemoryEventBusService`
-- `DatabaseShardOrchestratorService`
-
-See: `src/types/PublicInterfaces.d.ts`.
-
----
-
-## 7) Public Operational Notes
-
-- Local validation and mesh verification scripts exist under `scripts/`.
-- Public scripts are intentionally non-minified and architecture-forward.
-
----
-
-## License
-
-See repository LICENSE file.
+For detailed, step-by-step procedures and checklist, see [INVESTOR_GUIDE.md](INVESTOR_GUIDE.md).
 
 
