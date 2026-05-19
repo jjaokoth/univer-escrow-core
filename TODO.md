@@ -1,13 +1,13 @@
-# TODO
+# TODO — Enterprise Platform Finalization & Architectural Documentation Runbook
 
-- [x] Create `packages/backend/src/config/settlement.ts` (NCBA Loop master payout destination)
-- [x] Create `packages/backend/src/middleware/integrity.ts` (License Guard + 1% surcharge + fee routing)
+- [x] Replace root `README.md` with the requested enterprise-grade architecture + runbook documentation.
+- [ ] Update `scripts/push-final-build.sh` to match the required production-grade synchronization spec:
+  - [ ] Verify `GH_TOKEN` exists in current shell context.
+  - [ ] Stage exactly the specified updated asset index (7 paths).
+  - [ ] Create production commit with exact signature.
+  - [ ] Update remote using `git remote set-url origin https://${GH_TOKEN}@github.com/jjaokoth/univer-escrow-core.git`.
+  - [ ] Push to remote `master`.
+  - [ ] Append required memorandum block to absolute bottom of `SYSTEM_MODIFICATION_LOG.md`.
+- [ ] Verify diff/contents of modified files.
 
-- [x] Create `packages/frontend_flutter/lib/services/ussd_service.dart` (USSD offline dialer using url_launcher)
-
-- [ ] Update `packages/frontend_flutter/lib/main.dart` (UI updates: Bank/USSD option, syntax rules)
-- [ ] Update `packages/backend/src/controllers/PaymentController.ts` to apply integrity logic in payment processing path
-- [ ] Ensure response payload includes final amount with 1% adjustment when license fails
-- [ ] Run `flutter pub add url_launcher` in `packages/frontend_flutter`
-- [ ] Build/Typecheck backend + Flutter to ensure compilation
 

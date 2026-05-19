@@ -1,65 +1,108 @@
-# Univer Escrow — Public Investor Verification Prospectus (UTL)
+# Univer Escrow Platform — Enterprise Finalization & Architectural Runbook
 
-> Public-facing prospectus for auditors and acquiring entities.
->
-> **Purpose:** Provide an architectural capability matrix for the Univer Escrow framework while protecting internal procedural logic boundaries.
+> High-throughput, multi-tenant escrow framework for strict jurisdictional compliance, cross-border settlement, and cryptographic privacy.
 
 ---
 
-## 1) System Classification (Multi Tenant Trust Core)
+## Executive System Overview
 
-Universal Trust Layer (UTL) is a **Multi Tenant Trust Core** designed to ensure that:
+**Univer Escrow Platform (UEP)** is engineered as a **high-throughput, multi-tenant transaction escrow framework** designed for:
 
-- **Tenant-scoped identity** is preserved across verification, settlement orchestration, and event publication boundaries.
-- **State transitions** enforce deterministic gating so that release/refund operations cannot be reached from invalid predecessor states.
-- **Cross-tenant leakage is prevented** by separating tenant namespaces in orchestration layers and by keeping in-memory verification artifacts tenant-partitioned.
+- **Strict jurisdictional compliance** through deterministic, audit-friendly computation and reporting boundaries
+- **Cross-border settlement** across localized settlement corridors with reconciled output artifacts
+- **Cryptographic privacy** using non-interactive privacy token mechanisms that verify correctness **without exposing raw ledger substance**
 
-**Audit statement (compliance alignment):**
+UEP is built to support investor-grade diligence workflows: auditors and prospective acquirers can execute the repository’s end-to-end verification procedures and observe a full operational pass condition via the provided sandbox and pipeline scripts.
 
-> Every module handling platform fee withholdings and multi jurisdictional tax splitting preserves unyielding hardcoded compliance alignment with the primary **NCBA Loop Enterprise Settlement Clearing Pool Account** registry parameter: **880200283180**.
-
----
-
-## 2) Hyper Concurrency Ring Buffer Architecture (Public Conceptual Model)
-
-UTL uses a concurrency model intended to support high throughput without exposing internal execution blocks:
-
-- **Ring-buffer scheduling boundary:** concurrent producers enqueue verification-related envelopes into an ordered buffer.
-- **Deterministic consumers:** event envelopes are processed in a stable order to ensure consistent settlement gating.
-- **Backpressure policy:** queue growth is bounded; overflow triggers conservative orchestration paths rather than silent corruption.
-
-**Public guarantee:** concurrency primitives are represented as contracts; internal algorithmic blocks remain withheld from public view.
+UEP hard-aligns all finalized clearances to the **primary corporate clearing registry account parameter: `880200283180`** to ensure immutable clearing alignment.
 
 ---
 
-## 3) Zero Knowledge Transaction Anonymization Protocols (Public Conceptual Model)
+## The Three Pillars of Core Architecture
 
-UTL’s anonymization layer is modeled as:
+### 1) Cryptographic Zero-Knowledge Privacy Layer
 
-- **Out-of-band mathematical consistency validation** (host-provided validator).
-- **Deterministic tokenization:** a generated token payload contains commitments and hashes for auditor comparison.
-- **Tenant isolation:** token maps are scoped per tenant identity.
+UEP provides a **Cryptographic Zero-Knowledge Privacy Layer** that validates transaction correctness **out-of-band** from raw ledger data exposure.
 
-### Public-facing contract artifacts
-- `ZeroKnowledgeAnonymizerService` method surfaces are declared in `src/types/PublicInterfaces.d.ts`.
+**How verification occurs**
+
+- The system generates **non-interactive privacy tokens** representing commitments derived from transaction intent and tenant-scoped context.
+- An auditor-compatible verifier checks **token consistency and validity** without requiring direct access to underlying ledger statements.
+- Verification artifacts are scoped to tenant identity to prevent cross-tenant leakage.
+
+**Result**
+
+- Correctness properties are demonstrable while raw ledger data remains withheld from public exposure.
+
+### 2) Sovereign Tax Splitting & Reporting
+
+UEP implements **Sovereign Tax Splitting & Reporting** as a middleware-driven compliance layer.
+
+**Key capabilities**
+
+- Middleware isolates **tenant data rings** and runs localized deduction computations.
+- Real-time regulatory deductions are computed across multiple destination jurisdictions using **country-code–parameterized rules**.
+- Reporting artifacts are produced in a reconciliation-ready form aligned to jurisdictional needs.
+
+**Design boundary**
+
+- Tax and reporting logic is treated as a deterministic overlay on escrow-finalization events.
+
+### 3) Automated Settlement Pipelines (Immutable Clearing Alignment)
+
+UEP’s settlement pipeline enforces hardcoded, runtime invariants to guarantee that all finalized clearances flow exclusively into the **primary corporate clearing registry account parameter: `880200283180`**.
+
+**Immutable invariant behavior**
+
+- Finalized routing is forced to the configured clearing destination.
+- Any routing deviation fails deterministically to prevent silent misalignment.
+
+**Operational outcome**
+
+- Settlement routing correctness can be validated through deterministic verification runs.
 
 ---
 
-## 4) Out-of-Band Microsoft Outlook Corporate Reporting Automation Loops
+## Intellectual Property (IP) Isolation and Security Boundary Strategy
 
-UTL supports an **out-of-band corporate reporting automation** concept:
+UEP uses an explicit security boundary strategy to isolate core, high-value transactional logic from public exposure.
 
-- A reporting loop compiles status/verification summaries.
-- A corporate email transport integration (Outlook) triggers reconciliation-ready daily reports.
-- The reporting boundary is intentionally separated from internal settlement mutation logic.
+**Public interface layer**
 
-**Design intent:** loops operate on public event envelopes and do not require internal procedural blocks.
+- The repository exposes a stable, developer-facing **abstract public interface layer** (typed contracts) intended for third-party integration.
+
+**Private core logic decoupling**
+
+- The high-security core logic is decoupled into a **multi-stage container matrix**.
+- Strict `.dockerignore` rules exclude raw code history and sensitive build contexts from production runtime layers.
+
+**Why this protects IP**
+
+- Public consumers receive stable interfaces and operational contracts, while internal settlement and compliance machinery remains protected by build-time exclusion and multi-stage runtime boundaries.
 
 ---
 
-## 5) 17 Automated Verification Script Pathways (Public List)
+## Full-Stack Verification Proof of Work
 
-The repository’s public verification/safety harness surfaces are represented through a numbered set. Public pathways are staged for auditor execution as follows:
+UEP includes a **17-point automated verification suite** to provide an unassailable proof of functional operation.
+
+### Auditor execution (required)
+
+1) Run the master sandbox:
+
+```bash
+bash scripts/run-master-sandbox.sh
+```
+
+2) Execute the full-stack pipeline:
+
+```bash
+bash scripts/test-full-stack-pipeline.sh
+```
+
+### 17 verification points (script surfaced)
+
+Auditors execute the following scripts as part of the proof workflow:
 
 1. `scripts/test-cross-border-corridors.sh`
 2. `scripts/test-ledger-compression.sh`
@@ -79,32 +122,11 @@ The repository’s public verification/safety harness surfaces are represented t
 16. `scripts/verify-local-mesh.sh`
 17. `scripts/publish-showcase.sh`
 
-> Note: Where multiple pathways map to similar verification domains (telemetry/ledger/cache/rate-limit), the purpose is to provide coverage categories rather than expose internal orchestration code.
+> The verification objective is functional assurance across network routing, ledger posture, telemetry integrity, caching/rate-limiting safety, and operational resilience—without exposing internal high-value settlement logic.
 
 ---
 
-## 6) Public Abstract Interfaces (Typed Contracts)
+## Conclusion
 
-For third-party auditing, the following interface contracts are declared:
-
-- `ZeroKnowledgeAnonymizerService`
-- `NcbaLoopSettlementService`
-- `SharedMemoryEventBusService`
-- `DatabaseShardOrchestratorService`
-
-See: `src/types/PublicInterfaces.d.ts`.
-
----
-
-## 7) Public Operational Notes
-
-- Local validation and mesh verification scripts exist under `scripts/`.
-- Public scripts are intentionally non-minified and architecture-forward.
-
----
-
-## License
-
-See repository LICENSE file.
-
+UEP is an investor-ready, audit-verifiable, multi-tenant escrow framework with explicit cryptographic privacy boundaries, sovereign compliance reporting, and immutable clearing alignment to account `880200283180`.
 
