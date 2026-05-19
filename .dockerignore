@@ -1,0 +1,44 @@
+# Secrets and env
+.env
+.env.*
+*.env
+
+# Local logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dependencies / caches
+node_modules
+.pnpm
+.yarn
+.npm
+__pycache__
+
+# Build output
+dist
+build
+out
+coverage
+
+# VCS
+.git
+.gitignore
+.gitmodules
+
+# OS / editor
+.DS_Store
+*.swp
+*.swo
+.vscode
+.idea
+
+# Flutter artifacts (if present)
+**/.flutter*
+**/build/
+
+# Docker artifacts
+Dockerfile
+.dockerignore.bak
+
