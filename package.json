@@ -1,12 +1,22 @@
 {
-  "name": "univer-escrow-core",
+  "name": "universal-trust-layer",
+  "private": true,
   "version": "1.0.0",
-  "description": "Universal Trust Layer core transaction verification engine.",
-  "main": "src/services/MobileGatewayClient.ts",
+  "description": "Multi-tenant escrow gateway and transaction router.",
+  "main": "dist/server.js",
+  "license": "UNLICENSED",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 0"
+    "clean": "rm -rf dist",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "dev": "tsc -p tsconfig.json --watch"
   },
   "dependencies": {
     "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "typescript": "^5.6.3"
   }
 }
+
