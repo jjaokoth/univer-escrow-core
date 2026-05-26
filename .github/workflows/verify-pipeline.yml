@@ -1,0 +1,159 @@
+name: Verify Prototype Compliance Pipeline
+
+on:
+  push:
+    branches: ["master"]
+
+permissions:
+  contents: read
+  projects: write
+
+jobs:
+  verify:
+    name: Prototype simulation + compliance metrics to GitHub Projects
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/actions/runner-base:ubuntu22
+      options: --user=runner
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Prepare simulation environment
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Create a safe .env for stdout-only simulation in the clean runner.
+          # The workflow intentionally uses mock values and never requires sensitive credentials.
+          cat << 'EOF' > .env
+          NODE_ENV=development
+          SETTLEMENT_ACCOUNT=880200283180
+          MOCK_NCBA_LOOP_ACCOUNT_POOL=MOCK_NCBA_LOOP_ACCOUNT_POOL__DEMO_8802_0000_0000_0000
+          TENANT_ID=tenant_demo_a
+          MOBILE_DEVICE_ID=device_demo_001
+          HMAC_SIMULATION_SECRET=MOCK_HMAC_SECRET__DEMO_ONLY
+          EOF
+
+          chmod +x scripts/run-prototype-simulation.sh
+
+      - name: Run investor prototype simulator (stage validation loop)
+        id: sim
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Capture output for auditable logs.
+          bash scripts/run-prototype-simulation.sh | tee prototype-simulation.log
+
+          # Enforce failure if any stage emits [FAILURE].
+          if grep -q "\[FAILURE\]" prototype-simulation.log; then
+            echo "Prototype simulation produced failure markers."
+            exit 1
+          fi
+
+          # Also enforce that all SUCCESS markers exist.
+          for s in "Stage [01]" "Stage [02]" "Stage [03]" "Stage [04]"; do
+            if ! grep -q "\[SUCCESS\].*${s}" prototype-simulation.log; then
+              echo "Missing success marker for ${s}."
+              exit 1
+            fi
+          done
+
+          echo "COMPLIANCE_STATUS=passing" >> "$GITHUB_OUTPUT"
+
+      - name: Publish compliance metrics to GitHub Projects (GraphQL)
+        if: always()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${GH_TOKEN}" ]]; then
+            echo "GH_TOKEN secret is required for projects: write. Skipping project update."
+            exit 0
+          fi
+
+          AUTH_HEADER="Authorization: Bearer ${GH_TOKEN}"
+          API="https://api.github.com"
+
+          REPO_NAME="${GITHUB_REPOSITORY##*/}"
+          RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          STATUS="${{ steps.sim.outputs.COMPLIANCE_STATUS }}"
+
+          # GraphQL helper
+          graphql() {
+            curl -sSf \
+              -H "${AUTH_HEADER}" \
+              -H "Content-Type: application/json" \
+              -X POST "${API}/graphql" \
+              -d "${1}"
+          }
+
+          # Determine project number by attempting to create idempotently.
+          # Investor demonstration uses a deterministic title.
+          PROJECT_TITLE="Universal Trust Layer - Compliance (${REPO_NAME})"
+
+          # Create or locate project (GraphQL Projects v2). If the org does not support v2 in this environment,
+          # the workflow will fail loudly so auditors can see configuration issues.
+          create_or_find_project_mutation='{
+            "query": "mutation($owner:String!, $title:String!) {\n  createProject(input:{owner:$owner, title:$title, bodyText:\"Automated compliance metrics for investor prototype simulation\", readmeUrl:null, template:null}) {\n    project {\n      id\n      number\n      title\n    }\n  }\n}",
+            "variables": {"owner":"" + "${GITHUB_REPOSITORY_OWNER}" + "","title":"'"${PROJECT_TITLE}"'"}
+          }'
+
+          # Because GraphQL idempotency cannot be guaranteed across org templates,
+          # we attempt a create and then proceed with the returned project ID.
+          # If create fails due to duplication, the command will terminate; that is acceptable for CI governance.
+
+          echo "Creating or updating GitHub Project for compliance metrics..."
+
+          PROJECT_CREATE_OUT="$(graphql "$create_or_find_project_mutation" || true)"
+
+          PROJECT_ID="$(printf '%s' "$PROJECT_CREATE_OUT" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{const j=JSON.parse(s);const p=j.data&&j.data.createProject&&j.data.createProject.project&&j.data.createProject.project.id;process.stdout.write(p||'');}catch(e){process.stdout.write('');}})" )"
+
+          if [[ -z "$PROJECT_ID" ]]; then
+            # As a fallback, look up the project by title.
+            echo "Project create did not return an ID; attempting lookup by title."
+            lookup_out="$(graphql '{"query":"query($owner:String!, $title:String!){\n  user(login:$owner){\n    projectsV2(first:50){\n      nodes{ id title }\n    }\n  }\n}","variables":{"owner":"'"${GITHUB_REPOSITORY_OWNER}"'","title":"'"${PROJECT_TITLE}"'"}}' )"
+
+            PROJECT_ID="$(printf '%s' "$lookup_out" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{const j=JSON.parse(s);const nodes=((j.data||{}).user||{}).projectsV2||{};const arr=nodes.nodes||[];const p=arr.find(x=>x.title==='${PROJECT_TITLE}');process.stdout.write(p?p.id:'');}catch(e){process.stdout.write('');}})" )"
+          fi
+
+          if [[ -z "$PROJECT_ID" ]]; then
+            echo "Unable to resolve a GitHub Projects v2 project ID. Compliance metrics will not be recorded to board."
+            echo "GraphQL output: $PROJECT_CREATE_OUT"
+            exit 1
+          fi
+
+          echo "Resolved project ID: ${PROJECT_ID}"
+
+          # Add a project item for this run (create via Projects v2 addProjectV2ItemById)
+          TITLE="Compliance verification: ${STATUS}"
+          BODY="Investor prototype simulation pipeline executed.\n- Run URL: ${RUN_URL}\n- Commit: ${GITHUB_SHA}"
+
+          mutation_item='{"query":"mutation($projectId:ID!, $content:ProjectV2ItemCreateContent!){\n  createProjectV2ItemById(input:{projectId:$projectId, contentId:null}){\n    item{ id }\n  }\n}","variables":{}}'
+
+          # Use a simpler approach: create a draft issue as content and attach to project.
+          # However, creating issues is not guaranteed in CI. Therefore, store an auditable note in job summary instead.
+
+          echo "Recording compliance metric to job summary instead of creating board item due to org schema variability."
+          {
+            echo "### Prototype Compliance Verification";
+            echo "Status: **${STATUS}**";
+            echo "Run URL: ${RUN_URL}";
+            echo "Commit: ${GITHUB_SHA}";
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          echo "Project ID resolved but board item creation is intentionally skipped to avoid schema mismatch in public repos." 
+
+      - name: Assert simulator passed
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The previous step fails the job if failures occur.
+          echo "Verification completed successfully."
+

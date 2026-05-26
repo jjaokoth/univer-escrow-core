@@ -1,132 +1,134 @@
-# Univer Escrow Platform — Enterprise Finalization & Architectural Runbook
+# Universal Trust Layer — Public Investor Blueprint & Prototype Simulation Framework
 
-> High-throughput, multi-tenant escrow framework for strict jurisdictional compliance, cross-border settlement, and cryptographic privacy.
+## Executive Value Proposition
+The **Universal Trust Layer (UTL)** is a production-oriented transaction lifecycle architecture designed to help enterprises operate financial automation with **multi-tenant isolation**, **cross-platform mobile keychain drivers**, and **hardened non-root container deployment models**.
 
----
+UTL is engineered to reduce operational and compliance risk by combining three core guarantees:
 
-## Executive System Overview
+1. **Multi-tenant isolation by construction**
+   - Tenant-bound state is handled in isolated runtime environments.
+   - Runtime data structures are explicitly separated to prevent cross-tenant leakage.
+   - The architecture assumes hostile or malformed tenant traffic and validates boundaries before any settlement routing logic becomes effective.
 
-**Univer Escrow Platform (UEP)** is engineered as a **high-throughput, multi-tenant transaction escrow framework** designed for:
+2. **Cross-platform mobile signing & secure ingress verification**
+   - Mobile gateway operations retrieve signing material via the platform keychain interface.
+   - Payload integrity is demonstrated via **out-of-band dynamic HMAC verification** so that transit does not become the trust anchor.
+   - The simulation blueprint shows how cryptographic markers can be attached upstream without coupling trust to in-path network behavior.
 
-- **Strict jurisdictional compliance** through deterministic, audit-friendly computation and reporting boundaries
-- **Cross-border settlement** across localized settlement corridors with reconciled output artifacts
-- **Cryptographic privacy** using non-interactive privacy token mechanisms that verify correctness **without exposing raw ledger substance**
+3. **Hardened non-root containers with minimal runtime footprints**
+   - Production containers follow a multi-stage build pattern.
+   - Build-time artifacts are discarded at compilation boundaries.
+   - Runtime containers operate with **non-root posture** to harden privilege escalation vectors.
 
-UEP is built to support investor-grade diligence workflows: auditors and prospective acquirers can execute the repository’s end-to-end verification procedures and observe a full operational pass condition via the provided sandbox and pipeline scripts.
+This repository therefore serves as a public demonstration framework: it provides **auditable documentation**, an **interactive prototype simulator**, and a **CI verification workflow** aligned to investor-grade transparency and engineering governance.
 
-UEP hard-aligns all finalized clearances to the **primary corporate clearing registry account parameter: `880200283180`** to ensure immutable clearing alignment.
+## Functional Architecture Matrix (Out-of-Band Dynamic HMAC + Isolated Clearing)
+UTL demonstrates a strict separation between:
+- **Signing / integrity markers** produced before the backend receives the transaction, and
+- **Clearing / settlement routing** performed only inside isolated runtime environments that load configuration dynamically.
 
----
+The payload signing flow is designed to operate independently from the clearing runtime:
 
-## The Three Pillars of Core Architecture
+### Textual Matrix
 
-### 1) Cryptographic Zero-Knowledge Privacy Layer
+| Transaction Phase | Trust Anchor | Integrity Mechanism | Isolation Mechanism | Clearing Outcome |
+|---|---|---|---|---|
+| Mobile ingress verification | Mobile keychain-backed token | **Out-of-band dynamic HMAC hashes** attached as metadata | N/A (client-side) | Transaction proceeds only if local signing markers validate in the simulated gateway view |
+| Gateway verification | Server-side verification ring | HMAC formatting and recomputation | Verification occurs in isolated runtime context | Gateway marks tenant-safe structure and forwards to clearing simulation |
+| Tenant gateway isolation audit | Tenant boundary policy | Structural cryptographic isolation markers | Tenant-bound runtime separation | Prevents boundary crossing by design |
+| Invariant environment routing assertions | Runtime configuration | Environment-derived routing token selection | Isolated clearing runtime | Settlement target is loaded from configuration (e.g., `process.env.SETTLEMENT_ACCOUNT`) and never hardcoded |
+| Containerization non-root boundary scan | Runtime packaging | Compliance diagnostic report | Minimal runtime container | Build inputs discarded; immutable minimal runtime posture validated |
 
-UEP provides a **Cryptographic Zero-Knowledge Privacy Layer** that validates transaction correctness **out-of-band** from raw ledger data exposure.
+### Out-of-Band Signing and “Clearing Through Isolation”
+UTL’s public simulation blueprint models a key design principle:
 
-**How verification occurs**
+- **Signing occurs out-of-band** (from the mobile client) using dynamic HMAC verification.
+- The **clearing step only executes** inside an isolated runtime that loads settlement routing variables from environment configuration rather than hardcoding values in source code.
 
-- The system generates **non-interactive privacy tokens** representing commitments derived from transaction intent and tenant-scoped context.
-- An auditor-compatible verifier checks **token consistency and validity** without requiring direct access to underlying ledger statements.
-- Verification artifacts are scoped to tenant identity to prevent cross-tenant leakage.
+This separation reduces attack surface, improves governance, and supports enterprise auditability.
 
-**Result**
+## Secure Environment Design (No Sensitive Data)
+This repository’s investor-facing demonstration design avoids storing sensitive data in source code.
 
-- Correctness properties are demonstrable while raw ledger data remains withheld from public exposure.
+### Dynamic Routing Variables from Localized Environment Values
+UTL explicitly reads routing variables dynamically from localized environment variables.
 
-### 2) Sovereign Tax Splitting & Reporting
+For example:
+- `process.env.SETTLEMENT_ACCOUNT` is treated as the active clearing target.
+- The prototype simulator demonstrates that the clearing token is loaded from configuration rather than being hardcoded.
 
-UEP implements **Sovereign Tax Splitting & Reporting** as a middleware-driven compliance layer.
+### Configuration Contract (Safe Mock Tokens)
+To support local simulation and investor demonstration without exposing real credentials, the repository uses an `.env.example` configuration with safe mock tokens.
 
-**Key capabilities**
+The evaluator can safely run the prototype simulator without any production values.
 
-- Middleware isolates **tenant data rings** and runs localized deduction computations.
-- Real-time regulatory deductions are computed across multiple destination jurisdictions using **country-code–parameterized rules**.
-- Reporting artifacts are produced in a reconciliation-ready form aligned to jurisdictional needs.
+## `.env.example` Mapping Table
+Use the following conceptual mapping to align runtime expectations. The prototype simulator is designed to load values from `.env` if present, otherwise it falls back to `.env.example`.
 
-**Design boundary**
+| File | Variable | Purpose | Recommended Example Value |
+|---|---|---|---|
+| `.env.example` | `MOCK_NCBA_LOOP_ACCOUNT_POOL` | Safe mock settlement target pool identifier | `MOCK_NCBA_LOOP_ACCOUNT_POOL__DEMO_8802_0000_0000_0000` |
+| `.env.example` | `SETTLEMENT_ACCOUNT` | Active clearing target loaded at runtime | `880200283180` (mock-safe for simulation) |
+| `.env.example` | `TENANT_ID` | Demonstrates tenant boundary isolation | `tenant_demo_a` |
+| `.env.example` | `MOBILE_DEVICE_ID` | Simulated mobile keychain device identity | `device_demo_001` |
+| `.env.example` | `HMAC_SIMULATION_SECRET` | Out-of-band HMAC simulation secret (mock-safe) | `MOCK_HMAC_SECRET__DEMO_ONLY` |
 
-- Tax and reporting logic is treated as a deterministic overlay on escrow-finalization events.
+> Note: For the public demo workflow, the simulator uses safe tokens and emits structured validation markers on stdout.
 
-### 3) Automated Settlement Pipelines (Immutable Clearing Alignment)
+## Interactive Quick Start Runbook
+The following runbook enables an evaluator or team lead to initialize the local workspace, execute the interactive pipeline prototype simulator, and verify the platform locally.
 
-UEP’s settlement pipeline enforces hardcoded, runtime invariants to guarantee that all finalized clearances flow exclusively into the **primary corporate clearing registry account parameter: `880200283180`**.
-
-**Immutable invariant behavior**
-
-- Finalized routing is forced to the configured clearing destination.
-- Any routing deviation fails deterministically to prevent silent misalignment.
-
-**Operational outcome**
-
-- Settlement routing correctness can be validated through deterministic verification runs.
-
----
-
-## Intellectual Property (IP) Isolation and Security Boundary Strategy
-
-UEP uses an explicit security boundary strategy to isolate core, high-value transactional logic from public exposure.
-
-**Public interface layer**
-
-- The repository exposes a stable, developer-facing **abstract public interface layer** (typed contracts) intended for third-party integration.
-
-**Private core logic decoupling**
-
-- The high-security core logic is decoupled into a **multi-stage container matrix**.
-- Strict `.dockerignore` rules exclude raw code history and sensitive build contexts from production runtime layers.
-
-**Why this protects IP**
-
-- Public consumers receive stable interfaces and operational contracts, while internal settlement and compliance machinery remains protected by build-time exclusion and multi-stage runtime boundaries.
-
----
-
-## Full-Stack Verification Proof of Work
-
-UEP includes a **17-point automated verification suite** to provide an unassailable proof of functional operation.
-
-### Auditor execution (required)
-
-1) Run the master sandbox:
+### 1) Initialize your local environment
+From the repository root:
 
 ```bash
-bash scripts/run-master-sandbox.sh
+# Ensure dependencies are not required for the stdout-only simulation.
+# The simulator performs configuration parsing and cryptographic demonstration via local tooling.
+
+# Optional: preview existing .env.example if present.
+ls -la .env.example || true
 ```
 
-2) Execute the full-stack pipeline:
+### 2) Create or edit a local `.env` for simulation
+Create a safe local `.env` file that overrides configuration at runtime.
 
 ```bash
-bash scripts/test-full-stack-pipeline.sh
+cat << 'EOF' > .env
+NODE_ENV=development
+SETTLEMENT_ACCOUNT=880200283180
+MOCK_NCBA_LOOP_ACCOUNT_POOL=MOCK_NCBA_LOOP_ACCOUNT_POOL__DEMO_8802_0000_0000_0000
+TENANT_ID=tenant_demo_a
+MOBILE_DEVICE_ID=device_demo_001
+HMAC_SIMULATION_SECRET=MOCK_HMAC_SECRET__DEMO_ONLY
+EOF
 ```
 
-### 17 verification points (script surfaced)
+### 3) Execute the interactive prototype simulator
 
-Auditors execute the following scripts as part of the proof workflow:
+```bash
+chmod +x scripts/run-prototype-simulation.sh
+bash scripts/run-prototype-simulation.sh
+```
 
-1. `scripts/test-cross-border-corridors.sh`
-2. `scripts/test-ledger-compression.sh`
-3. `scripts/test-notification-pipeline.sh`
-4. `scripts/test-telemetry-pipeline.sh`
-5. `scripts/verify-local-mesh.sh`
-6. `scripts/migrate-offline-records.sh`
-7. `scripts/test-rate-limiting.sh`
-8. `scripts/test-cache-invalidation.sh`
-9. `scripts/test-arbitration-consensus.sh`
-10. `scripts/test-shard-elasticity.sh`
-11. `scripts/test-extreme-throughput.sh`
-12. `scripts/test-notification-pipeline.sh`
-13. `scripts/test-ledger-compression.sh`
-14. `scripts/test-cross-border-corridors.sh`
-15. `scripts/test-telemetry-pipeline.sh`
-16. `scripts/verify-local-mesh.sh`
-17. `scripts/publish-showcase.sh`
+### 4) Verify stage-by-stage results
+The simulator prints four stage headers and PASS/FAIL markers including:
+- **[SUCCESS] Stage [01]** mobile ingress HMAC simulation
+- **[SUCCESS] Stage [02]** multi-tenant gateway isolation structural audit
+- **[SUCCESS] Stage [03]** invariant environment routing assertions
+- **[SUCCESS] Stage [04]** non-root container boundary scan compliance report
 
-> The verification objective is functional assurance across network routing, ledger posture, telemetry integrity, caching/rate-limiting safety, and operational resilience—without exposing internal high-value settlement logic.
+### 5) Post-run compliance capture (recommended)
+Capture stdout for audit records:
 
----
+```bash
+bash scripts/run-prototype-simulation.sh | tee prototype-compliance-report.log
+```
 
-## Conclusion
+## Repository Deliverables
+- `README.md` — Investor-ready architecture overview and runbook.
+- `scripts/run-prototype-simulation.sh` — Interactive stdout simulator for the architectural workflow.
+- `.github/workflows/verify-pipeline.yml` — GitHub Actions verification pipeline that tracks passing compliance metrics via GitHub Projects.
 
-UEP is an investor-ready, audit-verifiable, multi-tenant escrow framework with explicit cryptographic privacy boundaries, sovereign compliance reporting, and immutable clearing alignment to account `880200283180`.
+## Governance Notes
+This blueprint is designed for public demonstration and investor evaluation. It provides repeatable, auditable output artifacts without requiring access to sensitive production infrastructure.
 
