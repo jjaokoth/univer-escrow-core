@@ -3,21 +3,13 @@
     "target": "ES2020",
     "module": "commonjs",
     "moduleResolution": "node",
-    "jsx": "react-jsx",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "types": ["node"],
-    "strict": true,
-    "skipLibCheck": false,
-    "forceConsistentCasingInFileNames": true,
     "esModuleInterop": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "outDir": "dist",
-    "rootDir": ".",
-    "noEmit": false
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "outDir": "./dist",
+    "rootDir": "./src"
   },
   "include": ["src/**/*", "types/**/*"],
-  "exclude": ["node_modules", "dist", "build", "coverage"]
+  "exclude": ["node_modules", "dist"]
 }
-
-

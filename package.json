@@ -1,10 +1,9 @@
 {
   "name": "universal-trust-layer",
-  "private": true,
   "version": "1.0.0",
-  "description": "Multi-tenant escrow gateway and transaction router.",
+  "private": true,
+  "description": "Multi-tenant escrow gateway and transaction router pipeline.",
   "main": "dist/server.js",
-  "license": "UNLICENSED",
   "scripts": {
     "clean": "rm -rf dist",
     "build": "tsc -p tsconfig.json",
@@ -12,13 +11,12 @@
     "dev": "tsc -p tsconfig.json --watch"
   },
   "dependencies": {
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/node": "^20.14.10",
     "typescript": "^5.6.3"
   }
-
 }
-
