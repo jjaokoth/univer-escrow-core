@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import path from 'path';
 import dotenv from 'dotenv';
-import { EscrowRouter } from './services/EscrowRouter';
+import * as EscrowModule from './services/EscrowRouter';
 
 dotenv.config();
 
@@ -10,21 +10,39 @@ const port = process.env.PORT || 8080;
 
 app.use(express.json());
 
-// Target the root public folder from compiled dist/src/ location
+// Target the root public folder relative to the compiled app location
 const publicPath = path.join(__dirname, '../../public');
-
-// Serve dashboard static assets
 app.use(express.static(publicPath));
 
-// Register API backend routes
-app.use('/api/escrow', EscrowRouter);
+// Inspect and safely extract the active middleware router instance
+let routerMiddleware: any = null;
 
-// System health mapping
+if (EscrowModule.EscrowRouter) {
+  routerMiddleware = EscrowModule.EscrowRouter;
+} else if ((EscrowModule as any).default) {
+  routerMiddleware = (EscrowModule as any).default;
+} else {
+  routerMiddleware = EscrowModule;
+}
+
+// Extract nested properties if exported inside an object wrapper
+if (routerMiddleware && routerMiddleware.router) {
+  routerMiddleware = routerMiddleware.router;
+}
+
+// Mount verified middleware route tree safely
+if (typeof routerMiddleware === 'function' || (routerMiddleware && typeof routerMiddleware.use === 'function')) {
+  app.use('/api/escrow', routerMiddleware);
+} else {
+  console.error("CRITICAL: EscrowRouter could not be parsed as a valid middleware function.");
+}
+
+// Health check endpoint mapping
 app.get('/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'UP', timestamp: new Date().toISOString() });
 });
 
-// Serve index.html as the root fallback route
+// Fallback route to serve the dashboard UI directly
 app.get('*', (req: Request, res: Response) => {
   res.sendFile(path.join(publicPath, 'index.html'));
 });
