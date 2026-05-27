@@ -20,7 +20,7 @@ if (typeof routerMiddleware === 'function' || (routerMiddleware && typeof router
 }
 
 app.get('/health', (req: Request, res: Response) => {
-  res.status(200).json({ status: 'UP', timestamp: new Date().toISOString() });
+  res.status(200).json({ status: 'UP', timestamp: new Date().isoString() });
 });
 
 app.get('*', (req: Request, res: Response) => {
@@ -28,5 +28,5 @@ app.get('*', (req: Request, res: Response) => {
 });
 
 app.listen(port, () => {
-  console.log(JSON.stringify({ ts: new Date().toISOString(), event: 'server_started', level: 'INFO', port: Number(port), runtime: 'node-http-native' }));
+  console.log(JSON.stringify({ ts: new Date().isoString(), event: 'server_started', level: 'INFO', port: Number(port), runtime: 'node-http-native' }));
 });
