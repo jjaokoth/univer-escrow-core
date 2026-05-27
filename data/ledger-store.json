@@ -1,0 +1,20 @@
+[
+  {
+    "transactionId": "tx_enclave_consensus_test_00000001",
+    "escrowRecordLeafHash": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+    "signature": "rsa_signature",
+    "status": "LOCKED",
+    "validAfterMs": 0,
+    "validUntilMs": 9999999999999,
+    "timestamp": "2026-06-03T16:58:16.005Z"
+  },
+  {
+    "transactionId": "tx_bft_split_brain_0001",
+    "escrowRecordLeafHash": "commitment_valid_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "signature": "rsa_signature_mock",
+    "status": "LOCKED",
+    "validAfterMs": 0,
+    "validUntilMs": 9999999999,
+    "timestamp": "2026-06-05T10:48:33.615Z"
+  }
+]

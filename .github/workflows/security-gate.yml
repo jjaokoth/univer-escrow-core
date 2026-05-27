@@ -1,0 +1,34 @@
+name: Security Gate (Cryptography + Privacy Invariants)
+
+on:
+  pull_request:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  security-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci
+
+      - name: Run hardened security gate matrix
+        env:
+          # Ensure tests have a stable working dir expectation.
+          NODE_ENV: test
+        run: |
+          chmod +x scripts/run-all-security-gates.sh
+          ./scripts/run-all-security-gates.sh
+
