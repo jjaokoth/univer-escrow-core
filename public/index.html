@@ -4,24 +4,24 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="color-scheme" content="dark" />
-  <title>Universal Trust Layer — Admin Console</title>
+  <title>Universal Trust Layer — Escrow Live Dashboard</title>
   <style>
     :root{
-      --bg0:#0b1020;
-      --bg1:#0f1730;
-      --card:#121c3b;
-      --card2:#0f1730;
-      --text:#e8eefc;
-      --muted:#aab6df;
+      --bg0:#070a14;
+      --bg1:#0b1020;
+      --card:#0f1730;
+      --card2:#0c1229;
+      --text:#eaf0ff;
+      --muted:#a9b6df;
       --line:rgba(255,255,255,.08);
       --accent:#6ee7ff;
       --accent2:#a78bfa;
       --good:#34d399;
       --warn:#fbbf24;
       --bad:#fb7185;
-      --shadow: 0 14px 50px rgba(0,0,0,.45);
-      --radius:16px;
-      --radius2:12px;
+      --shadow: 0 18px 55px rgba(0,0,0,.55);
+      --radius:18px;
+      --radius2:14px;
       --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
       --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
     }
@@ -34,11 +34,11 @@
       background:
         radial-gradient(1000px 600px at 15% 10%, rgba(110,231,255,.12), transparent 60%),
         radial-gradient(900px 500px at 85% 5%, rgba(167,139,250,.12), transparent 55%),
-        linear-gradient(180deg, var(--bg0), #070a14 65%);
+        linear-gradient(180deg, var(--bg1), var(--bg0) 70%);
     }
 
     .app{
-      max-width:1200px;
+      max-width:1240px;
       margin:0 auto;
       padding:22px 14px 40px;
     }
@@ -51,58 +51,50 @@
       margin-bottom:16px;
     }
 
-    .brand{
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-    }
+    .brand{display:flex; flex-direction:column; gap:6px;}
     .brand h1{
       margin:0;
       font-size:18px;
       letter-spacing:.2px;
-      font-weight:800;
+      font-weight:900;
+      line-height:1.2;
     }
     .brand .sub{
       color:var(--muted);
-      font-size:12px;
+      font-size:12.5px;
       line-height:1.35;
+      max-width:720px;
     }
+
+    .top-actions{display:flex; align-items:flex-start; gap:10px; flex-wrap:wrap; justify-content:flex-end;}
 
     .pill{
       display:inline-flex;
       align-items:center;
-      gap:10px;
+      justify-content:space-between;
+      gap:12px;
       padding:12px 14px;
-      background:rgba(18,28,59,.85);
+      background: rgba(18,28,59,.78);
       border:1px solid var(--line);
       border-radius:999px;
-      box-shadow:0 10px 30px rgba(0,0,0,.25);
+      box-shadow: 0 10px 35px rgba(0,0,0,.25);
       white-space:nowrap;
     }
-    .pill .label{
-      color:var(--muted);
-      font-size:12px;
-    }
-    .pill .value{
-      font-family:var(--mono);
-      font-size:12px;
-      color:var(--text);
-    }
 
-    .grid{
-      display:grid;
-      grid-template-columns: 1.2fr 1fr;
-      gap:12px;
-    }
+    .pill .label{color:var(--muted); font-size:12px;}
+    .pill .value{font-family:var(--mono); font-size:12.5px; color:var(--text)}
+    .mono{font-family:var(--mono)}
+    .small{font-size:12px; color:var(--muted)}
 
+    .grid{display:grid; grid-template-columns: 1.2fr 1fr; gap:12px;}
     @media (max-width: 980px){
       .grid{grid-template-columns: 1fr;}
-      .pill{width:100%; justify-content:space-between;}
       header{flex-direction:column; align-items:stretch;}
+      .top-actions{justify-content:flex-start;}
     }
 
     .card{
-      background: linear-gradient(180deg, rgba(18,28,59,.92), rgba(13,19,41,.92));
+      background: linear-gradient(180deg, rgba(17,27,58,.92), rgba(9,13,28,.92));
       border:1px solid var(--line);
       border-radius:var(--radius);
       box-shadow: var(--shadow);
@@ -113,57 +105,65 @@
       display:flex;
       align-items:center;
       justify-content:space-between;
+      gap:14px;
       padding:14px 16px;
       border-bottom:1px solid var(--line);
-      background:rgba(10,15,34,.35);
+      background: rgba(10,15,34,.25);
     }
 
-    .card .hd .title{
-      display:flex;
-      flex-direction:column;
-      gap:4px;
-      min-width:0;
-    }
-
-    .card .hd .title strong{
-      font-size:13px;
-      letter-spacing:.2px;
-    }
-
-    .card .hd .title span{
-      color:var(--muted);
-      font-size:12px;
-      line-height:1.35;
-    }
-
+    .card .hd .title{display:flex; flex-direction:column; gap:4px; min-width:0;}
+    .card .hd .title strong{font-size:13.5px; letter-spacing:.2px; font-weight:900;}
+    .card .hd .title span{color:var(--muted); font-size:12px; line-height:1.4;}
     .card .bd{padding:14px 16px;}
 
-    .row{display:flex; gap:12px; align-items:center; flex-wrap:wrap;}
+    .btn-row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
 
-    .kv{
-      flex:1;
-      min-width:200px;
-      padding:12px 12px;
-      border-radius:var(--radius2);
+    button{
+      cursor:pointer;
+      border:1px solid var(--line);
+      color:var(--text);
+      background: rgba(18,28,59,.55);
+      padding:10px 12px;
+      border-radius:12px;
+      font-weight:800;
+      font-size:12px;
+      letter-spacing:.1px;
+    }
+    button:hover{border-color: rgba(110,231,255,.35)}
+    button:active{transform: translateY(1px)}
+    .primary{border-color: rgba(110,231,255,.35); background: rgba(110,231,255,.10);}
+
+    .form-grid{display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:12px;}
+    @media (max-width: 720px){.form-grid{grid-template-columns: 1fr;}}
+
+    .kv{padding:12px; border-radius:var(--radius2); border:1px solid var(--line); background: rgba(8,12,26,.25);}
+    .kv .k{color:var(--muted); font-size:12px; margin-bottom:10px; font-weight:900;}
+
+    .field{display:flex; flex-direction:column; gap:6px;}
+    .field label{color:var(--muted); font-size:12px;}
+    input[type="text"], input[type="number"], textarea{
+      width:100%;
+      border-radius:12px;
       border:1px solid var(--line);
       background: rgba(8,12,26,.35);
+      color:var(--text);
+      padding:10px 12px;
+      font-family:var(--mono);
+      font-size:12.5px;
+      outline:none;
+      box-sizing:border-box;
     }
-    .kv .k{color:var(--muted); font-size:12px; margin-bottom:6px;}
-    .kv .v{font-family:var(--mono); font-size:13px; overflow:hidden; text-overflow:ellipsis;}
+    textarea{min-height:86px; resize:vertical;}
 
-    .status-grid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:10px;
-    }
+    .hint{color:var(--muted); font-size:11.5px; line-height:1.4;}
+    .divider{height:1px; background: var(--line); margin:14px 0;}
 
-    @media (max-width: 520px){
-      .status-grid{grid-template-columns:1fr;}
-    }
+    .status-grid{display:grid; grid-template-columns: 1fr 1fr; gap:10px;}
+    @media (max-width: 520px){.status-grid{grid-template-columns:1fr;}}
 
     .flag{
       border:1px solid var(--line);
-      background: rgba(8,12,26,.35);
+      background: rgba(8,12,26,.25);
       border-radius:14px;
       padding:12px;
       display:flex;
@@ -171,10 +171,9 @@
       justify-content:space-between;
       gap:12px;
     }
-
     .flag .meta{display:flex; flex-direction:column; gap:6px; min-width:0;}
-    .flag .meta .name{font-size:12px; color:var(--muted);}
-    .flag .meta .desc{font-size:12px; line-height:1.4;}
+    .flag .meta .name{font-size:12px; color:var(--muted); font-weight:800;}
+    .flag .meta .desc{font-size:12px; line-height:1.4; color:var(--text)}
 
     .badge{
       display:inline-flex;
@@ -186,10 +185,11 @@
       font-family:var(--mono);
       font-size:12px;
       white-space:nowrap;
+      height:fit-content;
     }
-    .b-good{color: #b9f6d2; background: rgba(52,211,153,.12);}
-    .b-warn{color: #ffe6a8; background: rgba(251,191,36,.12);}
-    .b-bad{color: #ffd0d8; background: rgba(251,113,133,.12);}
+    .b-good{color:#b9f6d2; background: rgba(52,211,153,.11)}
+    .b-warn{color:#ffe6a8; background: rgba(251,191,36,.11)}
+    .b-bad{color:#ffd0d8; background: rgba(251,113,133,.11)}
 
     .ledger{
       border:1px solid var(--line);
@@ -201,186 +201,169 @@
       gap:10px;
     }
 
-    .ledger .top{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:14px;
-      flex-wrap:wrap;
-    }
-
-    .ledger .h{
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-      min-width:280px;
-      flex:1;
-    }
-
-    .ledger .h .tag{
-      font-size:12px;
-      color:var(--muted);
-    }
-    .ledger .h .main{
-      font-size:15px;
-      font-weight:900;
-      letter-spacing:.2px;
-      line-height:1.25;
-    }
-
+    .ledger .top{display:flex; align-items:flex-start; justify-content:space-between; gap:14px; flex-wrap:wrap;}
+    .ledger .h{display:flex; flex-direction:column; gap:6px; min-width:280px; flex:1;}
+    .ledger .h .tag{font-size:12px; color:var(--muted); font-weight:900;}
+    .ledger .h .main{font-size:14.5px; font-weight:950; letter-spacing:.2px; line-height:1.25;}
     .ledger .id{
       font-family:var(--mono);
-      font-size:15px;
-      font-weight:900;
-      padding:12px 12px;
+      font-size:14px;
+      font-weight:950;
+      padding:12px;
       border-radius:14px;
       border:1px solid rgba(110,231,255,.25);
-      background: rgba(8,12,26,.35);
+      background: rgba(8,12,26,.25);
       width:100%;
+      word-break:break-all;
+      box-sizing:border-box;
     }
+    .ledger .note{color:var(--muted); font-size:12px; line-height:1.45;}
 
-    .ledger .note{
-      color:var(--muted);
-      font-size:12px;
-      line-height:1.45;
-    }
-
-    .matrix{
+    .matrix{display:flex; flex-direction:column; gap:10px;}
+    .matrix-head,.matrix-row{
       display:grid;
-      grid-template-columns: 1fr;
+      grid-template-columns: 140px 1fr 1fr 1fr;
       gap:10px;
-    }
-
-    .matrix .mt{
-      display:grid;
-      grid-template-columns: 120px 1fr 1fr 1fr;
-      gap:10px;
+      align-items:center;
       padding:10px;
       border:1px solid var(--line);
       border-radius:14px;
       background: rgba(8,12,26,.25);
-      align-items:center;
       font-size:12px;
-      color:var(--muted);
+      box-sizing:border-box;
     }
-    .matrix .mt strong{color:var(--text); font-weight:800;}
-
-    .matrix .r{
-      display:grid;
-      grid-template-columns: 120px 1fr 1fr 1fr;
-      gap:10px;
-      padding:10px;
-      border:1px solid var(--line);
-      border-radius:14px;
-      background: rgba(8,12,26,.35);
-      align-items:center;
-      font-size:12px;
+    @media (max-width: 720px){
+      .matrix-head,.matrix-row{grid-template-columns: 130px 1fr 1fr 1fr;}
+      .matrix-head div:nth-child(4),.matrix-row div:nth-child(4){display:none;}
     }
 
-    .tenant-name{font-family:var(--mono);}
+    .matrix-head{background: rgba(8,12,26,.18); color:var(--muted)}
+    .matrix-head strong{color:var(--text)}
 
-    .spark{
-      height:8px;
-      border-radius:999px;
-      background: rgba(255,255,255,.07);
-      overflow:hidden;
-    }
-    .spark > i{
-      display:block;
-      height:100%;
-      width:50%;
-      background: linear-gradient(90deg, rgba(110,231,255,.9), rgba(167,139,250,.9));
-      border-radius:999px;
-    }
-
-    .mono{font-family:var(--mono)}
+    .tenant-chip{display:flex; flex-direction:column; gap:6px; min-width:0;}
+    .tenant-chip .name{font-family:var(--mono); font-weight:900; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 
     .log{
       border:1px solid var(--line);
-      background: rgba(8,12,26,.35);
+      background: rgba(8,12,26,.25);
       border-radius:14px;
       overflow:hidden;
     }
-
-    .log .head{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      padding:10px 12px;
-      border-bottom:1px solid var(--line);
-      font-size:12px;
-      color:var(--muted);
-    }
-
-    .log .body{
-      max-height: 260px;
-      overflow:auto;
-      padding:10px 12px;
-    }
-
-    .log-item{
-      display:grid;
-      grid-template-columns: 150px 1fr;
-      gap:10px;
-      padding:8px 0;
-      border-bottom:1px dashed rgba(255,255,255,.07);
-    }
+    .log .head{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border-bottom:1px solid var(--line); font-size:12px; color:var(--muted);}
+    .log .body{max-height:280px; overflow:auto; padding:10px 12px;}
+    .log-item{display:grid; grid-template-columns: 160px 1fr; gap:10px; padding:8px 0; border-bottom:1px dashed rgba(255,255,255,.06);}
     .log-item:last-child{border-bottom:none;}
-    .log-ts{color:var(--muted); font-size:12px; font-family:var(--mono)}
-    .log-msg{font-size:12px; line-height:1.4}
-
-    .btn-row{display:flex; gap:10px; flex-wrap:wrap;}
-    button{
-      cursor:pointer;
-      border:1px solid var(--line);
-      color:var(--text);
-      background: rgba(18,28,59,.65);
-      padding:10px 12px;
-      border-radius:12px;
-      font-weight:700;
-      font-size:12px;
-    }
-    button:hover{border-color: rgba(110,231,255,.35)}
-    button:active{transform: translateY(1px)}
-    .primary{
-      border-color: rgba(110,231,255,.35);
-      background: rgba(110,231,255,.10);
-    }
-
-    .small{font-size:12px; color:var(--muted);}
+    .log-ts{color:var(--muted); font-size:12px; font-family:var(--mono);}
+    .log-msg{font-size:12px; line-height:1.45; white-space:pre-wrap; word-break:break-word;}
   </style>
 </head>
 <body>
   <div class="app">
     <header>
       <div class="brand">
-        <h1>Universal Trust Layer — Administrative Dashboard</h1>
-        <div class="sub">Real-time cryptographic validation flags, multi-tenant processing matrix, and immutable settlement routing.</div>
+        <h1>Universal Trust Layer — Escrow Live Dashboard</h1>
+        <div class="sub">Enterprise-grade, responsive operator console. Lock/Release tests execute live; telemetry receipts stream to the bottom terminal.</div>
       </div>
-      <div class="pill" aria-label="immutable clearing destination">
-        <div>
-          <div class="label">NCBA Loop Clearing Destination</div>
-          <div class="value">880200283180</div>
+
+      <div class="top-actions">
+        <div class="pill" aria-label="immutable clearing destination">
+          <div>
+            <div class="label">NCBA Loop Clearing Destination</div>
+            <div class="value" id="ui-ledger-destination">880200283180</div>
+          </div>
+          <div>
+            <div class="small" id="ui-runtime-status">ENGINE: booting…</div>
+          </div>
         </div>
-        <div class="small" id="ui-runtime-status">ENGINE: booting…</div>
       </div>
     </header>
 
     <div class="grid">
-      <section class="card" aria-label="system status dashboard">
+      <section class="card" aria-label="tenant monitoring matrix and escrow actions">
         <div class="hd">
           <div class="title">
-            <strong>System Status Dashboard</strong>
-            <span>Streaming cryptographic validation flags and routing readiness.</span>
+            <strong>Tenant Monitoring Matrix</strong>
+            <span>Active states for multiple tenants (Tenant-A, Tenant-B, …).</span>
           </div>
-          <div class="btn-row">
-            <button class="primary" id="btn-toggle">Pause</button>
-            <button id="btn-clear">Clear Log</button>
-          </div>
+          <div class="small mono" id="ui-tenant-count">tenants: 0</div>
         </div>
         <div class="bd">
-          <div class="status-grid">
+          <div class="matrix" aria-label="tenant monitoring matrix">
+            <div class="matrix-head" role="row">
+              <div><strong>Tenant</strong></div>
+              <div>DB Ring</div>
+              <div>Queue</div>
+              <div>Latency</div>
+            </div>
+            <div id="matrix-rows" aria-live="polite"></div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+              <div class="title" style="gap:2px;">
+                <strong style="font-size:13.5px; letter-spacing:.2px;">Escrow Action Panel</strong>
+                <span class="small" style="margin-top:0">Interactive forms to test live endpoints.</span>
+              </div>
+              <div class="btn-row">
+                <button class="primary" id="btn-pause">Pause Stream</button>
+                <button id="btn-clear">Clear Telemetry</button>
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <div class="kv" aria-label="lock funds form">
+                <div class="k">Lock Funds</div>
+                <div class="field">
+                  <label for="lock-tenant-id">Tenant ID</label>
+                  <input id="lock-tenant-id" type="text" placeholder="Tenant-A" autocomplete="off" />
+                </div>
+                <div style="height:10px"></div>
+                <div class="field">
+                  <label for="lock-account">Account</label>
+                  <input id="lock-account" type="text" placeholder="account@tenant" autocomplete="off" />
+                </div>
+                <div style="height:10px"></div>
+                <div class="field">
+                  <label for="lock-amount">Amount</label>
+                  <input id="lock-amount" type="number" step="0.01" min="0" placeholder="100.00" autocomplete="off" />
+                </div>
+                <div style="height:10px"></div>
+                <div class="field">
+                  <label for="lock-signature">Out-of-Band Signature</label>
+                  <textarea id="lock-signature" placeholder="Paste signature string or JSON receipt…"></textarea>
+                </div>
+                <div style="height:10px"></div>
+                <div class="btn-row">
+                  <button class="primary" id="btn-lock">Lock Funds</button>
+                </div>
+                <div class="hint" style="margin-top:10px">POST <span class="mono">/api/escrow/lock</span></div>
+              </div>
+
+              <div class="kv" aria-label="release funds form">
+                <div class="k">Release Funds</div>
+                <div class="field">
+                  <label for="release-transaction-id">Transaction ID</label>
+                  <input id="release-transaction-id" type="text" placeholder="escrowId or transactionId" autocomplete="off" />
+                </div>
+                <div style="height:10px"></div>
+                <div class="field">
+                  <label for="release-signature">Signature</label>
+                  <textarea id="release-signature" placeholder="Paste signature string or JSON receipt…"></textarea>
+                </div>
+                <div style="height:10px"></div>
+                <div class="btn-row">
+                  <button class="primary" id="btn-release">Release Funds</button>
+                </div>
+                <div class="hint" style="margin-top:10px">POST <span class="mono">/api/escrow/release</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="height:14px"></div>
+
+          <div class="status-grid" aria-label="secure master UI gateway live flags">
             <div class="flag" role="group" aria-label="zk-proof verification">
               <div class="meta">
                 <div class="name">ZK Proof Verification</div>
@@ -411,71 +394,38 @@
             </div>
           </div>
 
-          <div style="height:12px"></div>
-
-          <div class="row">
-            <div class="kv">
-              <div class="k">Inbound envelope state</div>
-              <div class="v" id="kv-envelope">—</div>
-            </div>
-            <div class="kv">
-              <div class="k">Last verification timestamp</div>
-              <div class="v" id="kv-ts">—</div>
-            </div>
-          </div>
-
-          <div style="height:12px"></div>
+          <div style="height:14px"></div>
 
           <div class="ledger" aria-label="settlement ledger card">
             <div class="top">
               <div class="h">
                 <div class="tag">Settlement Ledger (Immutable)</div>
-                <div class="main">All net settlement values clear exclusively to the NCBA Loop Corporate Clearing Pool Account</div>
+                <div class="main">All net settlement values clear exclusively to the NCBA Loop Corporate Clearing Pool Account.</div>
               </div>
               <div class="badge b-good" style="align-self:flex-start">LOCKED</div>
             </div>
             <div class="id" id="ledger-destination">880200283180</div>
-            <div class="note">The destination identity is hardcoded and enforced by the UI execution engine for operator transparency.</div>
+            <div class="note">Destination identity enforcement is visible to operators via this UI execution engine surface.</div>
           </div>
+
         </div>
       </section>
 
-      <section class="card" aria-label="multi-tenant processing matrix">
+      <section class="card" style="grid-column: 1 / -1" aria-label="real-time telemetry stream">
         <div class="hd">
           <div class="title">
-            <strong>Multi-tenant Processing Matrix</strong>
-            <span>Isolated database ring metrics per tenant.</span>
-          </div>
-          <div class="small mono" id="kv-tenant-count">tenants: 0</div>
-        </div>
-        <div class="bd">
-          <div class="matrix">
-            <div class="mt" role="row">
-              <div>Tenant</div>
-              <div>DB Ring</div>
-              <div>Queue</div>
-              <div>Latency</div>
-            </div>
-            <div id="matrix-rows" class="matrix-rows" aria-live="polite"></div>
-          </div>
-        </div>
-      </section>
-
-      <section class="card" style="grid-column: 1 / -1" aria-label="transaction stream monitor log">
-        <div class="hd">
-          <div class="title">
-            <strong>Transaction Stream Event Monitor</strong>
-            <span>Structural simulation of JSON transactional envelopes & cryptographic checking.</span>
+            <strong>Real-time Telemetry Stream</strong>
+            <span>Terminal-like logging area. Receipts, transaction IDs, and successful clearing route flags stream dynamically.</span>
           </div>
           <div class="small" id="kv-stream-rate">rate: —</div>
         </div>
         <div class="bd">
           <div class="log">
             <div class="head">
-              <div>Event Log</div>
+              <div>Telemetry Log</div>
               <div class="mono" id="kv-log-count">items: 0</div>
             </div>
-            <div class="body" id="log-body"></div>
+            <div class="body" id="log-body" aria-live="polite"></div>
           </div>
         </div>
       </section>
