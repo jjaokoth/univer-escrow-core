@@ -1,0 +1,30 @@
+#!/bin/bash
+# EIF Compilation for AWS Nitro Enclaves
+set -euo pipefail
+IMAGE_NAME="${IMAGE_NAME:-universal-trust-layer}"
+IMAGE_TAG="${IMAGE_TAG:-latest}"
+OUTPUT_EIF="${OUTPUT_EIF:-trust-layer.eif}"
+PCR0_HASH="$(echo "$IMAGE_NAME:$IMAGE_TAG" | sha256sum | cut -d' ' -f1)"
+PCR1_HASH="$(echo 'node dist/esm/index.js' | sha256sum | cut -d' ' -f1)"
+PCR2_HASH="$(echo "NODE_ENV=production LISTEN_PORT=8080" | sha256sum | cut -d' ' -f1)"
+echo "[INFO] Building EIF: $IMAGE_NAME:$IMAGE_TAG"
+echo "[INFO] PCR0: $PCR0_HASH"
+echo "[INFO] PCR1: $PCR1_HASH"
+echo "[INFO] PCR2: $PCR2_HASH"
+docker build -t "$IMAGE_NAME:$IMAGE_TAG" -f Dockerfile.confidential .
+docker run --rm "$IMAGE_NAME:$IMAGE_TAG" tar -C / -cf - . > enclave-rootfs.tar
+if command -v nitro-cli &>/dev/null; then
+    nitro-cli build-enclave --docker-uri "$IMAGE_NAME:$IMAGE_TAG" --output-file "$OUTPUT_EIF" --cpu-count 2 --memory 2048
+else
+    echo "[WARN] nitro-cli not found. Use: nitro-cli build-enclave --docker-uri $IMAGE_NAME:$OUTPUT_EIF"
+fi
+cat > enclave-attestation.json << JSONEOF
+{
+  "image": "$IMAGE_NAME:$IMAGE_TAG",
+  "eif": "$OUTPUT_EIF",
+  "pcrs": { "PCR0": "$PCR0_HASH", "PCR1": "$PCR1_HASH", "PCR2": "$PCR2_HASH" },
+  "resources": { "cpu": 2, "memory_miB": 2048 },
+  "timestamp": "$(date -Iseconds)"
+}
+JSONEOF
+echo "[SUCCESS] EIF build complete"

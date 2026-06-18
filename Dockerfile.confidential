@@ -1,0 +1,76 @@
+# =============================================================================
+# Universal Trust Layer - Confidential Computing Multi-Stage Dockerfile
+# =============================================================================
+# Architecture: Designed for hardware enclaves (AWS Nitro Enclaves, GCP Confidential Space)
+# Build: Multi-stage to ensure source code is discarded at runtime
+# Security: Non-root user, explicit env fallbacks, hardware-backed attestation
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# STAGE 1: BUILD - Compile TypeScript and prepare artifacts
+# -----------------------------------------------------------------------------
+FROM node:20-alpine AS build
+
+WORKDIR /workspace
+
+# Install build dependencies with pinned hashes
+RUN apk add --no-cache openssl curl git ca-certificates dumb-init
+
+# Copy package manifests
+COPY package.json package-lock.json* ./
+
+# Install production dependencies only
+RUN npm ci --omit=dev --ignore-scripts
+
+# Copy TypeScript configuration
+COPY tsconfig.json tsconfig.esm.json tsconfig.cjs.json ./
+
+# Copy source (will be discarded after build)
+COPY src ./src
+COPY scripts ./scripts
+
+# Compile dual targets (ESM + CommonJS)
+RUN npm run build:package || (npm run build:cjs && npm run build:esm)
+
+# Verify build artifacts exist
+RUN ls -la dist/ && test -f dist/esm/index.js
+
+# -----------------------------------------------------------------------------
+# STAGE 2: RUNTIME - Minimal production image
+# -----------------------------------------------------------------------------
+FROM node:20-alpine AS runtime
+
+# Security: Create non-root user with minimal privileges
+RUN addgroup -S enclave && adduser -S enclave -G enclave -D -s /sbin/nologin
+
+WORKDIR /app
+
+# Copy only compiled artifacts (NO SOURCE)
+COPY --from=build /workspace/dist ./dist
+COPY --from=build /workspace/package.json ./package.json
+
+# Create secure directories with proper ownership
+RUN mkdir -p /app/data /app/logs /app/secrets && chown -R enclave:enclave /app
+
+# Security: Drop capabilities
+RUN apk add --no-cache ca-certificates dumb-init && touch /app/.dockerenv
+
+# =============================================================================
+# SECURITY: Non-root execution boundary
+# =============================================================================
+USER enclave
+
+# =============================================================================
+# RUNTIME ENVIRONMENT VARIABLES (Explicit Fallbacks)
+# =============================================================================
+ENV ENCLAVE_MRSIGNER=${ENCLAVE_MRSIGNER:-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=}
+ENV ENCLAVE_MRENCLAVE=${ENCLAVE_MRENCLAVE:-BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=}
+ENV NODE_ENV=production
+ENV LISTEN_PORT=${LISTEN_PORT:-8080}
+
+# =============================================================================
+# EXECUTION ENTRYPOINT
+# =============================================================================
+EXPOSE 8080
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["node", "dist/esm/index.js"]

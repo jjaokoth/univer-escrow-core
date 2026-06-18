@@ -21,7 +21,6 @@ import { PayoutController } from './controllers/payoutController';
 import { EscrowController } from './controllers/escrowController';
 import { EscrowService } from './services/escrowService';
 import { PayoutProofController } from './controllers/payoutProofController';
-import paymentApiRouter from './routes/paymentApi';
 import paymentRouter from './routes/paymentRoutes';
 
 export const app = express();
@@ -42,12 +41,10 @@ app.use(json());
 app.use(privacyMiddleware);
 app.use('/api', apiKeyMiddleware);
 
-// Payment routes (Web + Mobile)
-// Web: POST /api/handshake/create
-// Mobile: POST /api/handshake/verify
-app.use('/api', paymentApiRouter);
-
-// Payment routes (v1)
+// Payment routes (consolidated)
+// Mount the tenant-protected handshake API under the v1 path.
+// Web: POST /api/v1/handshake/create
+// Mobile: POST /api/v1/handshake/verify
 app.use('/api/v1/handshake', paymentRouter);
 
 

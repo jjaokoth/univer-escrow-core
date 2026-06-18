@@ -1,12 +1,39 @@
 [
   {
-    "transactionId": "tx_enclave_consensus_test_00000001",
-    "escrowRecordLeafHash": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-    "signature": "rsa_signature",
+    "transactionId": "tx_1",
+    "escrowRecordLeafHash": "leaf_hash_A",
+    "signature": "sig_0",
     "status": "LOCKED",
-    "validAfterMs": 0,
-    "validUntilMs": 9999999999999,
-    "timestamp": "2026-06-03T16:58:16.005Z"
+    "validAfterMs": 1767225600000,
+    "validUntilMs": 1767225610000,
+    "timestamp": "2026-01-01T00:00:00.000Z"
+  },
+  {
+    "transactionId": "tx_2",
+    "escrowRecordLeafHash": "leaf_hash_B_MUTATED",
+    "signature": "sig_1",
+    "status": "LOCKED",
+    "validAfterMs": 1767225601000,
+    "validUntilMs": 1767225611000,
+    "timestamp": "2026-01-01T00:00:01.000Z"
+  },
+  {
+    "transactionId": "tx_3",
+    "escrowRecordLeafHash": "leaf_hash_C",
+    "signature": "sig_2",
+    "status": "LOCKED",
+    "validAfterMs": 1767225602000,
+    "validUntilMs": 1767225612000,
+    "timestamp": "2026-01-01T00:00:02.000Z"
+  },
+  {
+    "transactionId": "tx_4",
+    "escrowRecordLeafHash": "leaf_hash_D",
+    "signature": "sig_3",
+    "status": "LOCKED",
+    "validAfterMs": 1767225603000,
+    "validUntilMs": 1767225613000,
+    "timestamp": "2026-01-01T00:00:03.000Z"
   },
   {
     "transactionId": "tx_bft_split_brain_0001",
@@ -15,6 +42,15 @@
     "status": "LOCKED",
     "validAfterMs": 0,
     "validUntilMs": 9999999999,
-    "timestamp": "2026-06-05T10:48:33.615Z"
+    "timestamp": "2026-06-26T16:33:33.847Z"
+  },
+  {
+    "transactionId": "tx_enclave_consensus_test_00000001",
+    "escrowRecordLeafHash": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+    "signature": "rsa_signature",
+    "status": "LOCKED",
+    "validAfterMs": 0,
+    "validUntilMs": 9999999999999,
+    "timestamp": "2026-06-26T16:35:22.077Z"
   }
 ]

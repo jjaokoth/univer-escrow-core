@@ -3,13 +3,25 @@
   "version": "1.0.0",
   "private": true,
   "description": "Multi-tenant escrow gateway and transaction router pipeline.",
-  "main": "dist/server.js",
+  "main": "dist/cjs/server.js",
+  "module": "dist/esm/server.js",
   "scripts": {
     "clean": "rm -rf dist",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/server.js",
-    "dev": "tsc -p tsconfig.json --watch"
+    "build:cjs": "tsc -p tsconfig.cjs.json",
+    "build:esm": "tsc -p tsconfig.esm.json",
+    "build:package": "npm run clean && npm run build:cjs && npm run build:esm",
+    "start": "node dist/cjs/server.js",
+    "dev": "tsc -p tsconfig.json --watch",
+    "test:enclave-migration": "npm run build && node dist/tests/enclaveMigrationRouter.test.js"
   },
+  "exports": {
+    ".": {
+      "require": "./dist/cjs/server.js",
+      "import": "./dist/esm/server.js"
+    }
+  },
+  "types": "dist/cjs/types/index.d.ts",
   "dependencies": {
     "dotenv": "^16.4.5",
     "express": "^4.19.2"

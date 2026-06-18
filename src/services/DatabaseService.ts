@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { LedgerAuditor } from './LedgerAuditor';
 import { buildMerkleForLedger } from './merkle/ledgerMerkle';
+import { EnclaveSealingEngine, type EnclaveSealingConfig } from './cryptography/EnclaveSealingEngine.js';
 
 export type EscrowStatus = 'LOCKED' | 'RELEASED' | 'FAILED';
 
@@ -46,6 +47,9 @@ export class DatabaseService {
   private static readonly storeDirPath = path.dirname(
     DatabaseService.storePath
   );
+
+  private static activeSealingContext: EnclaveSealingConfig | null = null;
+  private static activeSealingEngine: EnclaveSealingEngine | null = null;
 
   private static async withWriteLock<T>(fn: () => Promise<T>): Promise<T> {
     const run = DatabaseService.writeQueue.then(fn, fn);
@@ -100,6 +104,39 @@ export class DatabaseService {
     })();
 
     await DatabaseService.initLock;
+  }
+
+  public static setActiveSealingContext(config: EnclaveSealingConfig): void {
+    if (!config || typeof config !== 'object') {
+      throw new TypeError('config must be an EnclaveSealingConfig object');
+    }
+
+    DatabaseService.activeSealingContext = {
+      cpuMasterSecret: String(config.cpuMasterSecret),
+      mrsigner: String(config.mrsigner),
+      mrenclave: String(config.mrenclave)
+    };
+    DatabaseService.activeSealingEngine = new EnclaveSealingEngine(
+      DatabaseService.activeSealingContext
+    );
+  }
+
+  public static getActiveSealingContext(): EnclaveSealingConfig | null {
+    if (!DatabaseService.activeSealingContext) return null;
+    return {
+      cpuMasterSecret: DatabaseService.activeSealingContext.cpuMasterSecret,
+      mrsigner: DatabaseService.activeSealingContext.mrsigner,
+      mrenclave: DatabaseService.activeSealingContext.mrenclave
+    };
+  }
+
+  public static getActiveSealingEngine(): EnclaveSealingEngine | null {
+    if (!DatabaseService.activeSealingEngine && DatabaseService.activeSealingContext) {
+      DatabaseService.activeSealingEngine = new EnclaveSealingEngine(
+        DatabaseService.activeSealingContext
+      );
+    }
+    return DatabaseService.activeSealingEngine;
   }
 
   public static async saveRecord(record: EscrowRecord): Promise<void> {

@@ -1,6 +1,10 @@
 import express, { type Request, type Response, type NextFunction } from 'express';
+import { VsockBridgeAdapter } from './infrastructure/VsockBridgeAdapter.js';
+import { MerkleCompactor } from './merkle/MerkleCompactor.js';
+import { ClusterMembershipManager } from './consensus/ClusterMembershipManager.js';
 import { DatabaseService } from './DatabaseService.js';
 import { AuditLogger } from './AuditLogger.js';
+import { antiDosChallengeMiddleware } from '../middleware/AntiDosMiddleware.js';
 
 import { LedgerAuditor } from './LedgerAuditor.js';
 import { EnclaveBridgeService, type AttestationDocument } from './EnclaveBridgeService.js';
@@ -9,6 +13,7 @@ import { buildMerkleForLedger } from './merkle/ledgerMerkle.js';
 import { NotaryAnchorService } from './NotaryAnchorService.js';
 import type { NotaryAuthoritativeState } from './NotaryAnchorService.js';
 import { AdminRecoveryService, type AdminRecoveryPayload } from './AdminRecoveryService.js';
+import { EnclaveMigrationManager, type EnclaveUpgradeMigrationPayload } from './infrastructure/EnclaveMigrationManager.js';
 
 const router = express.Router();
 
@@ -50,7 +55,7 @@ router.post('/enclave/attest', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/lock', (req: Request, res: Response, next: NextFunction) => {
+router.post('/lock', antiDosChallengeMiddleware, (req: Request, res: Response, next: NextFunction) => {
   if (LedgerAuditor.getInstance().isFrozen()) {
     return res.status(503).json({
       status: 'FAILED',
@@ -366,6 +371,62 @@ router.post('/api/infrastructure/join-cluster', (req: Request, res: Response) =>
   }
 });
 
+// POST /api/infrastructure/upgrade-state-enclave
+router.post('/api/infrastructure/upgrade-state-enclave', async (req: Request, res: Response) => {
+  try {
+    if (!EnclaveBridgeService.isEnclaveReady()) {
+      return res.status(503).json({ status: 'FAILED', error: 'ENCLAVE_NOT_READY' });
+    }
+
+    const { payload, trustedMRSIGNER, trustedPackagePublicKeyPem } = req.body ?? {};
+
+    if (!payload || typeof payload !== 'object') {
+      return res.status(400).json({ status: 'FAILED', error: 'MIGRATION_PAYLOAD_REQUIRED' });
+    }
+    if (!trustedMRSIGNER || typeof trustedMRSIGNER !== 'string') {
+      return res.status(400).json({ status: 'FAILED', error: 'TRUSTED_MRSIGNER_REQUIRED' });
+    }
+    if (!trustedPackagePublicKeyPem || typeof trustedPackagePublicKeyPem !== 'string') {
+      return res.status(400).json({ status: 'FAILED', error: 'TRUSTED_PACKAGE_PUBLIC_KEY_REQUIRED' });
+    }
+
+    const currentSealingContext = DatabaseService.getActiveSealingContext() ?? {
+      cpuMasterSecret: process.env.CPU_MASTER_SECRET ?? '',
+      mrsigner: process.env.CURRENT_MRSIGNER ?? '',
+      mrenclave: process.env.CURRENT_MRENCLAVE ?? ''
+    };
+
+    if (
+      !currentSealingContext.cpuMasterSecret ||
+      !currentSealingContext.mrsigner ||
+      !currentSealingContext.mrenclave
+    ) {
+      return res.status(500).json({ status: 'FAILED', error: 'ACTIVE_SEALING_CONTEXT_UNAVAILABLE' });
+    }
+
+    const manager = new EnclaveMigrationManager(currentSealingContext);
+    const migrationResult = manager.migrateBlob({
+      payload: payload as EnclaveUpgradeMigrationPayload,
+      trustedMRSIGNER,
+      trustedPackagePublicKeyPem
+    });
+
+    if (!migrationResult.ok) {
+      return res.status(403).json({ status: 'FAILED', error: migrationResult.error });
+    }
+
+    DatabaseService.setActiveSealingContext({
+      cpuMasterSecret: currentSealingContext.cpuMasterSecret,
+      mrsigner: trustedMRSIGNER,
+      mrenclave: payload.metadata.targetMrenclave
+    });
+
+    return res.status(200).json({ status: 'SUCCESS', newBlob: migrationResult.newBlob });
+  } catch (err: any) {
+    return res.status(500).json({ status: 'FAILED', error: err?.message ?? 'UPGRADE_STATE_ENCLAVE_FAILED' });
+  }
+});
+
 // POST /api/consensus/register-peer
 router.post('/consensus/register-peer', (req: Request, res: Response) => {
   try {
@@ -397,7 +458,7 @@ router.post('/consensus/register-peer', (req: Request, res: Response) => {
 
 // POST /api/consensus/verify-state-transition
 // Followers run local enclave verification and return an approval share only if valid.
-router.post('/consensus/verify-state-transition', (req: Request, res: Response) => {
+router.post('/consensus/verify-state-transition', antiDosChallengeMiddleware, (req: Request, res: Response) => {
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { EnclaveBftVerifyEngine } = require('./consensus/EnclaveBftVerifyEngine.js') as typeof import('./consensus/EnclaveBftVerifyEngine.js');
@@ -442,7 +503,7 @@ router.post('/consensus/verify-state-transition', (req: Request, res: Response) 
 
 // POST /api/consensus/append-entry
 // Fail-closed disk commit: requires BFT threshold payload.
-router.post('/consensus/append-entry', async (req: Request, res: Response) => {
+router.post('/consensus/append-entry', antiDosChallengeMiddleware, async (req: Request, res: Response) => {
   try {
     const { term, leaderId, entry, bft } = req.body ?? {};
 

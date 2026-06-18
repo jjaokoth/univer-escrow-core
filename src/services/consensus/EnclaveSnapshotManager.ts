@@ -45,7 +45,15 @@ export class EnclaveSnapshotManager {
   private snapshotHistory: EpochStateSnapshot[] = [];
   private readonly MAX_SNAPSHOT_HISTORY = 10;
 
+  /**
+   * repo-wide deterministic "mock" signature verification.
+   * A share is considered cryptographically valid iff signature ===
+   * sha256(domain || nodeId || term || merkleRootHash).
+   */
+  private readonly signatureDomainSeparator = 'ENCLAVE_SNAPSHOT_QUORUM_SHARE_V1';
+
   private constructor() {}
+
 
   public static getInstance(): EnclaveSnapshotManager {
     if (!EnclaveSnapshotManager.instance) {
