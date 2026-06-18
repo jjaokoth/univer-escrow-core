@@ -106,6 +106,13 @@ windows/release/
 web/flutter_service_worker.js
 web/version.json
 
+# Ignore compiled JS artifacts built into src/ (keep TypeScript sources only)
+src/*.js
+src/**/*.js
+
+# Ignore accidental package-lock copies inside node_modules
+node_modules/.package-lock.json
+
 # ========================================
 # IDE & Local Development
 # ========================================
