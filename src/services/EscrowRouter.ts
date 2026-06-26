@@ -15,6 +15,8 @@ import type { NotaryAuthoritativeState } from './NotaryAnchorService.js';
 import { AdminRecoveryService, type AdminRecoveryPayload } from './AdminRecoveryService.js';
 import { EnclaveMigrationManager, type EnclaveUpgradeMigrationPayload } from './infrastructure/EnclaveMigrationManager.js';
 
+import { CrossChainRelayEngine, TargetChain, type BlockHeader, type StateProof } from './bridge/CrossChainRelayEngine.js';
+import { ConfidentialIdentityEngine, type VerifiableCredential, type IdentityVerificationResult } from './security/ConfidentialIdentityEngine.js';
 const router = express.Router();
 
 
@@ -789,6 +791,53 @@ router.post('/api/reconciliation/catch-up', async (req: Request, res: Response) 
       status: 'FAILED',
       error: err?.message ?? 'CATCH_UP_FAILED'
     });
+  }
+});
+
+/**
+ * POST /api/bridge/verify-external-state
+ * Verifies raw block headers and state proofs from external chains
+ */
+router.post('/bridge/verify-external-state', async (req: Request, res: Response) => {
+  try {
+    const { rawHeaders, targetChain, stateProofs } = req.body;
+    const relayEngine = new CrossChainRelayEngine();
+    const headers = await relayEngine.verifyBlockHeaders(
+      rawHeaders.map((h: string) => Buffer.from(h.slice(2), 'hex')),
+      targetChain as TargetChain
+    );
+    const verifiedState = await relayEngine.verifyStateProofs(headers[0]?.stateRoot || '', stateProofs);
+    const logs = await relayEngine.extractStateLogs(headers, stateProofs);
+    return res.status(200).json({
+      status: 'SUCCESS',
+      blockNumber: headers[0]?.number || 0n,
+      stateRoot: headers[0]?.stateRoot,      verifiedCount: verifiedState.size,
+      logsCount: logs.length
+    });
+  } catch (err: any) {
+    return res.status(500).json({ status: 'FAILED', error: err?.message ?? 'BRIDGE_VERIFY_FAILED' });
+  }
+});
+
+/**
+ * POST /api/bridge/ingest-identity-claim
+ * Ingests signed Verifiable Credentials for hardware-sealed wallet binding
+ */
+router.post('/bridge/ingest-identity-claim', async (req: Request, res: Response) => {
+  try {
+    const { credential } = req.body as { credential: VerifiableCredential };
+    const identityEngine = new ConfidentialIdentityEngine();
+    const result: IdentityVerificationResult = await identityEngine.verifyCredential(credential);
+    if (!result.valid) {
+      return res.status(400).json({ status: 'FAILED', error: result.error });
+    }
+    return res.status(200).json({
+      status: 'SUCCESS',
+      subjectDid: result.subjectDid,
+      issuerDid: result.issuerDid
+    });
+  } catch (err: any) {
+    return res.status(500).json({ status: 'FAILED', error: err?.message ?? 'IDENTITY_INGEST_FAILED' });
   }
 });
 

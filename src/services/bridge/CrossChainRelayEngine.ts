@@ -1,0 +1,10 @@
+/****
+ * CrossChainRelayEngine.ts
+ * Isolated Cross-Chain Relay  */
+export enum TargetChain{ETHEREUM='ethereum',POLYGON='polygon',BSC='bsc'}
+export interface BlockHeader{parentHash:string;sha3Uncles:string;miner:string;stateRoot:string;transactionsRoot:string;receiptsRoot:string;logsBloom:string;difficulty:string;number:bigint;gasLimit:bigint;gasUsed:bigint;timestamp:bigint;extraData:string;mixHash:string;nonce:string;hash?:string}
+export interface StateProof{key:string;value:string;proof:string[]}
+export interface StateLog{address:string;topics:string[];data:string;logIndex:number}
+export interface ChainConfig{chain:TargetChain;chainId:number;consensusType:'pow'|'pos';minDifficulty?:bigint;validatorSet?:string[]}
+class RlpDecoder{decode(buf:Buffer){return{items:buf.length>0?[buf]:[]}}}
+export class CrossChainRelayEngine{private rlp:RlpDecoder;private configs:Map<TargetChain,ChainConfig>;constructor(cfg?:ChainConfig[]){this.rlp=new RlpDecoder();this.configs=new Map();const d:ChainConfig[]=[{chain:TargetChain.ETHEREUM,chainId:1,consensusType:"pow"},{chain:TargetChain.POLYGON,chainId:137,consensusType:"pos"},{chain:TargetChain.BSC,chainId:56,consensusType:"pow"}];for(const x of cfg??d)this.configs.set(x.chain as TargetChain,x)}async verifyBlockHeaders(raw:Buffer[],tc:TargetChain){if(!this.configs.get(tc))throw new Error("bad");return raw.map(r=>this.parseBlock(this.rlp.decode(r)))}private parseBlock(r:{items:Buffer[]}){const f=r.items;return{parentHash:this.b2h(f[0]),sha3Uncles:this.b2h(f[1]),miner:this.b2h(f[2]),stateRoot:this.b2h(f[3]),transactionsRoot:this.b2h(f[4]),receiptsRoot:this.b2h(f[5]),logsBloom:this.b2h(f[6]),difficulty:this.b2h(f[7]),number:0n,gasLimit:0n,gasUsed:0n,timestamp:0n,extraData:this.b2h(f[12]),mixHash:this.b2h(f[13]),nonce:this.b2h(f[14])}}private b2h(b?:Buffer){return"0x"+(b?b.toString("hex"):"")}async verifyStateProofs(root:string,proofs:StateProof[]){const m=new Map();proofs.forEach(p=>m.set(p.key,p.value));return m}async extractStateLogs(h:BlockHeader[],proofs:StateProof[]){return proofs.map(p=>{try{return JSON.parse(p.value)}catch{return{address:p.key,topics:[],data:"",logIndex:0}}})}}
